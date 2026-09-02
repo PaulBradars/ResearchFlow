@@ -1,0 +1,11 @@
+/target/
+/data/
+/logs/
+/.tools/
+/.idea/
+/.vscode/
+*.iml
+*.db
+*.db-shm
+*.db-wal
+hs_err_pid*

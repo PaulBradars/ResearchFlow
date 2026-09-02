@@ -1,0 +1,84 @@
+package researchflow.app;
+
+import researchflow.persistence.ConnectionFactory;
+import researchflow.persistence.JdbcStudyRepository;
+import researchflow.persistence.JdbcFormRepository;
+import researchflow.persistence.JdbcResponseRepository;
+import researchflow.persistence.JdbcDatasetRepository;
+import researchflow.persistence.MigrationRunner;
+import researchflow.persistence.Seeder;
+import researchflow.persistence.TransactionManager;
+import researchflow.service.StudyService;
+import researchflow.service.FormService;
+import researchflow.service.ResponseQueryService;
+import researchflow.service.ResponseSubmissionService;
+import researchflow.service.DatasetService;
+import researchflow.service.DatasetCorrectionService;
+import researchflow.service.AuditService;
+
+public final class AppServices {
+    private final AppConfig config;
+    private final ConnectionFactory connections;
+    private final StudyService studies;
+    private final FormService forms;
+    private final ResponseSubmissionService submissions;
+    private final ResponseQueryService responses;
+    private final DatasetService datasets;
+    private final DatasetCorrectionService corrections;
+    private final AuditService audits;
+
+    private AppServices(AppConfig config, ConnectionFactory connections, StudyService studies,
+                        FormService forms, ResponseSubmissionService submissions, ResponseQueryService responses,
+                        DatasetService datasets, DatasetCorrectionService corrections, AuditService audits) {
+        this.config = config;
+        this.connections = connections;
+        this.studies = studies;
+        this.forms = forms;
+        this.submissions = submissions;
+        this.responses = responses;
+        this.datasets = datasets;
+        this.corrections = corrections;
+        this.audits = audits;
+    }
+
+    public static AppServices initialize(AppConfig config) {
+        var connections = new ConnectionFactory(config.databasePath());
+        new MigrationRunner(connections).migrate();
+        var transactions = new TransactionManager(connections);
+        var repository = new JdbcStudyRepository(connections, transactions);
+        var studies = new StudyService(repository);
+        var formRepository = new JdbcFormRepository(connections, transactions);
+        var responseRepository = new JdbcResponseRepository(connections, transactions);
+        var forms = new FormService(formRepository);
+        var submissions = new ResponseSubmissionService(formRepository, responseRepository);
+        var responses = new ResponseQueryService(responseRepository);
+        var datasetRepository = new JdbcDatasetRepository(connections, transactions);
+        var datasets = new DatasetService(datasetRepository, formRepository);
+        var corrections = new DatasetCorrectionService(datasetRepository, formRepository);
+        var audits = new AuditService(datasetRepository);
+        if (config.seedDevelopmentData()) {
+            new Seeder(studies, forms, submissions).seedIfEmpty();
+        }
+        return new AppServices(config, connections, studies, forms, submissions, responses,
+                datasets, corrections, audits);
+    }
+
+    public AppConfig config() {
+        return config;
+    }
+
+    public ConnectionFactory connections() {
+        return connections;
+    }
+
+    public StudyService studies() {
+        return studies;
+    }
+
+    public FormService forms() { return forms; }
+    public ResponseSubmissionService submissions() { return submissions; }
+    public ResponseQueryService responses() { return responses; }
+    public DatasetService datasets() { return datasets; }
+    public DatasetCorrectionService corrections() { return corrections; }
+    public AuditService audits() { return audits; }
+}
