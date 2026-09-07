@@ -55,16 +55,31 @@ public final class Navigator {
         boundary.show(new DatasetWorkspaceView(study, services.datasets(), services.corrections(),
                 services.audits(), async, this::showError).node());
     }
+
     public void showImport(Study study) {
         shell.setLeft(studyNavigation(study));
         boundary.show(new ImportWorkspaceView(study, services.imports(), async,
                 () -> showDataset(study), this::showError).node());
     }
+
     public void showQuality(Study study) {
         shell.setLeft(studyNavigation(study));
         boundary.show(new QualityWorkspaceView(study, services.quality(), services.qualityReview(),
                 services.versions(), services.datasets(), async, this::showError).node());
     }
+
+    public void showAnalysis(Study study) {
+        shell.setLeft(studyNavigation(study));
+        boundary.show(new AnalysisWorkspaceView(study, services.analysis(), services.aiFacade(), services.findings(),
+                services.datasets(), services.versions(), async, this::showError).node());
+    }
+
+    public void showFindings(Study study) {
+        shell.setLeft(studyNavigation(study));
+        boundary.show(new FindingsReportWorkspaceView(study, services.findings(), services.reports(),
+                async, this::showError).node());
+    }
+
     private void showRespondent(Study study, researchflow.domain.Form form) {
         shell.setLeft(studyNavigation(study));
         boundary.show(new RespondentEntryView(form, services.submissions(), async,
@@ -91,10 +106,8 @@ public final class Navigator {
         var importData = navButton("Import", () -> showImport(study));
         var dataset = navButton("Dataset", () -> showDataset(study));
         var quality = navButton("Quality / Versions", () -> showQuality(study));
-        var analysis = navButton("Analysis", () -> { });
-        var findings = navButton("Findings / Report", () -> { });
-        analysis.setDisable(true);
-        findings.setDisable(true);
+        var analysis = navButton("Analysis", () -> showAnalysis(study));
+        var findings = navButton("Findings / Report", () -> showFindings(study));
         var nav = new VBox(8, back, dashboard, disabled, form, responses, importData, dataset, quality, analysis, findings);
         nav.setPadding(new Insets(20, 14, 20, 14));
         nav.getStyleClass().add("side-nav");

@@ -163,6 +163,26 @@ public final class JdbcDatasetRepository implements DatasetRepository, AuditRepo
         }
     }
 
+    @Override
+    public void recordEvent(UUID studyId, String eventType, String entityType, UUID entityId, String detailsJson) {
+        try (var connection = connections.open();
+             var statement = connection.prepareStatement("""
+                     INSERT INTO audit_logs(id, study_id, event_type, entity_type, entity_id, actor, occurred_at, details_json)
+                     VALUES (?, ?, ?, ?, ?, 'local-researcher', ?, ?)
+                     """)) {
+            statement.setString(1, UUID.randomUUID().toString());
+            statement.setString(2, studyId.toString());
+            statement.setString(3, eventType);
+            statement.setString(4, entityType);
+            statement.setString(5, entityId == null ? null : entityId.toString());
+            statement.setString(6, Instant.now().toString());
+            statement.setString(7, detailsJson);
+            statement.executeUpdate();
+        } catch (SQLException exception) {
+            throw new PersistenceException("Could not record the audit event.", exception);
+        }
+    }
+
     private static String buildWhere(UUID studyId, DatasetQuery query, List<Object> params) {
         var sql = new StringBuilder(" WHERE f.study_id=?"); params.add(studyId);
         if (query.formId() != null) { sql.append(" AND f.id=?"); params.add(query.formId()); }

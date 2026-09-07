@@ -9,7 +9,8 @@ public final class MigrationRunner {
     private static final List<String> MIGRATIONS = List.of(
             "db/migration/V001__initial_schema.sql",
             "db/migration/V002__dataset_audit_baseline.sql",
-            "db/migration/V003__quality_review_indexes.sql"
+            "db/migration/V003__quality_review_indexes.sql",
+            "db/migration/V004__finding_evidence_columns.sql"
     );
     private final ConnectionFactory connections;
 

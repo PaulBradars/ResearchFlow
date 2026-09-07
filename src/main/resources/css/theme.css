@@ -109,3 +109,15 @@
     -fx-text-fill: -rf-ink;
     -fx-font-weight: 700;
 }
+
+.chat-user {
+    -fx-background-color: #e9edf7;
+    -fx-background-radius: 8;
+}
+
+.chat-assistant {
+    -fx-background-color: -rf-surface;
+    -fx-border-color: #e2e7f0;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
