@@ -5,6 +5,8 @@ import researchflow.persistence.JdbcStudyRepository;
 import researchflow.persistence.JdbcFormRepository;
 import researchflow.persistence.JdbcResponseRepository;
 import researchflow.persistence.JdbcDatasetRepository;
+import researchflow.persistence.JdbcQualityRepository;
+import researchflow.persistence.JdbcVersionRepository;
 import researchflow.persistence.MigrationRunner;
 import researchflow.persistence.Seeder;
 import researchflow.persistence.TransactionManager;
@@ -15,6 +17,9 @@ import researchflow.service.ResponseSubmissionService;
 import researchflow.service.DatasetService;
 import researchflow.service.DatasetCorrectionService;
 import researchflow.service.AuditService;
+import researchflow.service.QualityService;
+import researchflow.service.QualityReviewService;
+import researchflow.service.VersionService;
 
 public final class AppServices {
     private final AppConfig config;
@@ -26,10 +31,14 @@ public final class AppServices {
     private final DatasetService datasets;
     private final DatasetCorrectionService corrections;
     private final AuditService audits;
+    private final QualityService quality;
+    private final QualityReviewService qualityReview;
+    private final VersionService versions;
 
     private AppServices(AppConfig config, ConnectionFactory connections, StudyService studies,
                         FormService forms, ResponseSubmissionService submissions, ResponseQueryService responses,
-                        DatasetService datasets, DatasetCorrectionService corrections, AuditService audits) {
+                        DatasetService datasets, DatasetCorrectionService corrections, AuditService audits,
+                        QualityService quality, QualityReviewService qualityReview, VersionService versions) {
         this.config = config;
         this.connections = connections;
         this.studies = studies;
@@ -39,6 +48,9 @@ public final class AppServices {
         this.datasets = datasets;
         this.corrections = corrections;
         this.audits = audits;
+        this.quality = quality;
+        this.qualityReview = qualityReview;
+        this.versions = versions;
     }
 
     public static AppServices initialize(AppConfig config) {
@@ -56,11 +68,16 @@ public final class AppServices {
         var datasets = new DatasetService(datasetRepository, formRepository);
         var corrections = new DatasetCorrectionService(datasetRepository, formRepository);
         var audits = new AuditService(datasetRepository);
+        var qualityRepository = new JdbcQualityRepository(connections, transactions);
+        var quality = new QualityService(formRepository, responseRepository, qualityRepository);
+        var qualityReview = new QualityReviewService(qualityRepository, corrections);
+        var versionRepository = new JdbcVersionRepository(connections, transactions);
+        var versions = new VersionService(versionRepository);
         if (config.seedDevelopmentData()) {
             new Seeder(studies, forms, submissions).seedIfEmpty();
         }
         return new AppServices(config, connections, studies, forms, submissions, responses,
-                datasets, corrections, audits);
+                datasets, corrections, audits, quality, qualityReview, versions);
     }
 
     public AppConfig config() {
@@ -81,4 +98,7 @@ public final class AppServices {
     public DatasetService datasets() { return datasets; }
     public DatasetCorrectionService corrections() { return corrections; }
     public AuditService audits() { return audits; }
+    public QualityService quality() { return quality; }
+    public QualityReviewService qualityReview() { return qualityReview; }
+    public VersionService versions() { return versions; }
 }

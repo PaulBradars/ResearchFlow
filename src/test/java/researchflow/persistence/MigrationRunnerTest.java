@@ -31,7 +31,8 @@ class MigrationRunnerTest {
                     "responses", "answers", "dataset_versions", "quality_issues", "analyses", "findings",
                     "audit_logs", "chat_references", "answer_corrections")));
             try (var versions = connection.createStatement().executeQuery("SELECT COUNT(*) FROM schema_migrations")) {
-                versions.next(); assertEquals(2, versions.getInt(1));
+                versions.next(); assertEquals(3, versions.getInt(1));
+
             }
         }
     }

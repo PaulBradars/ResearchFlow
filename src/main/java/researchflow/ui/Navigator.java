@@ -55,7 +55,11 @@ public final class Navigator {
         boundary.show(new DatasetWorkspaceView(study, services.datasets(), services.corrections(),
                 services.audits(), async, this::showError).node());
     }
-
+    public void showQuality(Study study) {
+        shell.setLeft(studyNavigation(study));
+        boundary.show(new QualityWorkspaceView(study, services.quality(), services.qualityReview(),
+                services.versions(), services.datasets(), async, this::showError).node());
+    }
     private void showRespondent(Study study, researchflow.domain.Form form) {
         shell.setLeft(studyNavigation(study));
         boundary.show(new RespondentEntryView(form, services.submissions(), async,
@@ -80,10 +84,9 @@ public final class Navigator {
         var form = navButton("Form", () -> showForms(study));
         var responses = navButton("Responses", () -> showResponses(study));
         var dataset = navButton("Dataset", () -> showDataset(study));
-        var quality = navButton("Quality / Versions", () -> { });
+        var quality = navButton("Quality / Versions", () -> showQuality(study));
         var analysis = navButton("Analysis", () -> { });
         var findings = navButton("Findings / Report", () -> { });
-        quality.setDisable(true);
         analysis.setDisable(true);
         findings.setDisable(true);
         var nav = new VBox(8, back, dashboard, disabled, form, responses, dataset, quality, analysis, findings);

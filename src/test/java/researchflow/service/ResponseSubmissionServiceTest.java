@@ -45,5 +45,7 @@ class ResponseSubmissionServiceTest {
     private static final class RejectingResponses implements ResponseRepository {
         public void submit(Form form, researchflow.domain.Response response) { throw new AssertionError("must not persist"); }
         public List<researchflow.domain.ResponseSummary> findByStudy(UUID id) { return List.of(); }
+        public List<researchflow.domain.Response> findFullByStudy(UUID id) { return List.of(); }
     }
+
 }

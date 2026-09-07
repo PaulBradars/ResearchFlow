@@ -78,6 +78,71 @@ public final class JdbcResponseRepository implements ResponseRepository {
         }
     }
 
+    @Override
+    public List<Response> findFullByStudy(UUID studyId) {
+        try (var connection = connections.open();
+             var statement = connection.prepareStatement("""
+                     SELECT r.id, r.form_id, r.form_version, r.started_at, r.submitted_at, r.duration_seconds
+                     FROM responses r JOIN forms f ON f.id = r.form_id
+                     WHERE f.study_id = ? AND r.status = 'COMPLETE'
+                     ORDER BY r.submitted_at
+                     """)) {
+            statement.setString(1, studyId.toString());
+            var results = new ArrayList<Response>();
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    var id = UUID.fromString(rows.getString("id"));
+                    results.add(new Response(id, UUID.fromString(rows.getString("form_id")), rows.getInt("form_version"),
+                            parseNullableInstant(rows.getString("started_at")), Instant.parse(rows.getString("submitted_at")),
+                            rows.getObject("duration_seconds") == null ? null : rows.getLong("duration_seconds"),
+                            loadTypedAnswers(connection, id)));
+                }
+            }
+            return List.copyOf(results);
+        } catch (SQLException exception) {
+            throw new PersistenceException("Could not load responses for quality review.", exception);
+        }
+    }
+
+    private static List<Answer> loadTypedAnswers(java.sql.Connection connection, UUID responseId) throws SQLException {
+        try (var statement = connection.prepareStatement("""
+                SELECT a.id, a.value_text, a.value_number, a.value_boolean, a.value_date, a.created_at,
+                       a.question_id, q.question_type
+                FROM answers a JOIN questions q ON q.id = a.question_id WHERE a.response_id = ?
+                """)) {
+            statement.setString(1, responseId.toString());
+            try (var rows = statement.executeQuery()) {
+                var answers = new ArrayList<Answer>();
+                while (rows.next()) answers.add(mapTypedAnswer(rows));
+                return answers;
+            }
+        }
+    }
+
+    private static Answer mapTypedAnswer(java.sql.ResultSet row) throws SQLException {
+        var id = UUID.fromString(row.getString("id"));
+        var questionId = UUID.fromString(row.getString("question_id"));
+        var createdAt = Instant.parse(row.getString("created_at"));
+        var type = row.getString("question_type");
+        var text = row.getString("value_text");
+        if (text != null) {
+            if (type.equals("MULTIPLE_CHOICE") || type.equals("SINGLE_CHOICE") || type.equals("LIKERT") || type.equals("RATING"))
+                return new Answer.Choice(id, questionId, java.util.Arrays.asList(text.split(CHOICE_SEPARATOR, -1)), createdAt);
+            return new Answer.Text(id, questionId, text, createdAt);
+        }
+        var number = row.getObject("value_number");
+        if (number != null) return new Answer.Number(id, questionId, row.getDouble("value_number"), createdAt);
+        var bool = row.getObject("value_boolean");
+        if (bool != null) return new Answer.BooleanValue(id, questionId, row.getInt("value_boolean") == 1, createdAt);
+        var date = row.getString("value_date");
+        if (date != null) return new Answer.DateValue(id, questionId, java.time.LocalDate.parse(date), createdAt);
+        throw new SQLException("Answer " + id + " has no recorded value.");
+    }
+
+    private static Instant parseNullableInstant(String value) {
+        return value == null ? null : Instant.parse(value);
+    }
+
     private static void insertAnswer(java.sql.Connection connection, UUID responseId, Answer answer) throws SQLException {
         try (var insert = connection.prepareStatement("""
                 INSERT INTO answers(id, response_id, question_id, value_text, value_number, value_boolean,
