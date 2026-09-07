@@ -55,6 +55,11 @@ public final class Navigator {
         boundary.show(new DatasetWorkspaceView(study, services.datasets(), services.corrections(),
                 services.audits(), async, this::showError).node());
     }
+    public void showImport(Study study) {
+        shell.setLeft(studyNavigation(study));
+        boundary.show(new ImportWorkspaceView(study, services.imports(), async,
+                () -> showDataset(study), this::showError).node());
+    }
     public void showQuality(Study study) {
         shell.setLeft(studyNavigation(study));
         boundary.show(new QualityWorkspaceView(study, services.quality(), services.qualityReview(),
@@ -83,13 +88,14 @@ public final class Navigator {
         disabled.getStyleClass().add("eyebrow");
         var form = navButton("Form", () -> showForms(study));
         var responses = navButton("Responses", () -> showResponses(study));
+        var importData = navButton("Import", () -> showImport(study));
         var dataset = navButton("Dataset", () -> showDataset(study));
         var quality = navButton("Quality / Versions", () -> showQuality(study));
         var analysis = navButton("Analysis", () -> { });
         var findings = navButton("Findings / Report", () -> { });
         analysis.setDisable(true);
         findings.setDisable(true);
-        var nav = new VBox(8, back, dashboard, disabled, form, responses, dataset, quality, analysis, findings);
+        var nav = new VBox(8, back, dashboard, disabled, form, responses, importData, dataset, quality, analysis, findings);
         nav.setPadding(new Insets(20, 14, 20, 14));
         nav.getStyleClass().add("side-nav");
         nav.setPrefWidth(210);

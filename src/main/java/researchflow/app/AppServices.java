@@ -20,6 +20,7 @@ import researchflow.service.AuditService;
 import researchflow.service.QualityService;
 import researchflow.service.QualityReviewService;
 import researchflow.service.VersionService;
+import researchflow.service.DatasetImportService;
 
 public final class AppServices {
     private final AppConfig config;
@@ -34,11 +35,13 @@ public final class AppServices {
     private final QualityService quality;
     private final QualityReviewService qualityReview;
     private final VersionService versions;
-
+    private final DatasetImportService imports;
     private AppServices(AppConfig config, ConnectionFactory connections, StudyService studies,
                         FormService forms, ResponseSubmissionService submissions, ResponseQueryService responses,
                         DatasetService datasets, DatasetCorrectionService corrections, AuditService audits,
-                        QualityService quality, QualityReviewService qualityReview, VersionService versions) {
+                        QualityService quality, QualityReviewService qualityReview, VersionService versions,
+                        DatasetImportService imports) {
+
         this.config = config;
         this.connections = connections;
         this.studies = studies;
@@ -51,7 +54,9 @@ public final class AppServices {
         this.quality = quality;
         this.qualityReview = qualityReview;
         this.versions = versions;
+        this.imports = imports;
     }
+
 
     public static AppServices initialize(AppConfig config) {
         var connections = new ConnectionFactory(config.databasePath());
@@ -71,14 +76,14 @@ public final class AppServices {
         var qualityRepository = new JdbcQualityRepository(connections, transactions);
         var quality = new QualityService(formRepository, responseRepository, qualityRepository);
         var qualityReview = new QualityReviewService(qualityRepository, corrections);
-        var versionRepository = new JdbcVersionRepository(connections, transactions);
-        var versions = new VersionService(versionRepository);
+        var versionRepository = new JdbcVersionRepository(connections, transactions);        var versions = new VersionService(versionRepository);
+        var imports = new DatasetImportService(forms, submissions);
         if (config.seedDevelopmentData()) {
             new Seeder(studies, forms, submissions).seedIfEmpty();
         }
         return new AppServices(config, connections, studies, forms, submissions, responses,
-                datasets, corrections, audits, quality, qualityReview, versions);
-    }
+                datasets, corrections, audits, quality, qualityReview, versions, imports);
+}
 
     public AppConfig config() {
         return config;
@@ -101,4 +106,6 @@ public final class AppServices {
     public QualityService quality() { return quality; }
     public QualityReviewService qualityReview() { return qualityReview; }
     public VersionService versions() { return versions; }
+    public DatasetImportService imports() { return imports; }
 }
+
