@@ -3,6 +3,7 @@ package researchflow.ui;
 import javafx.application.Platform;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -13,8 +14,8 @@ public final class Async {
         this.executor = executor;
     }
 
-    public <T> void run(Supplier<T> work, Consumer<T> onSuccess, Consumer<Throwable> onFailure) {
-        executor.submit(() -> {
+    public <T> Future<?> run(Supplier<T> work, Consumer<T> onSuccess, Consumer<Throwable> onFailure) {
+        return executor.submit(() -> {
             try {
                 var result = work.get();
                 Platform.runLater(() -> onSuccess.accept(result));
@@ -24,8 +25,8 @@ public final class Async {
         });
     }
 
-    public void run(Runnable work, Runnable onSuccess, Consumer<Throwable> onFailure) {
-        run(() -> {
+    public Future<?> run(Runnable work, Runnable onSuccess, Consumer<Throwable> onFailure) {
+        return run(() -> {
             work.run();
             return null;
         }, ignored -> onSuccess.run(), onFailure);

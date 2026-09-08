@@ -40,6 +40,7 @@ public final class AnalysisRunView {
     private final TextField filterValue = new TextField();
     private final ComboBox<DatasetVersion> version = new ComboBox<>();
     private final Label validation = new Label();
+    private final BusyState runBusy = new BusyState();
     private final VBox evidence = new VBox(10);
     private final Study study;
     private final AnalysisService analysisService;
@@ -90,6 +91,7 @@ public final class AnalysisRunView {
         var run = new Button("Run analysis");
         run.getStyleClass().add("primary-button");
         run.setOnAction(event -> run());
+        var runBar = new HBox(10, run, runBusy.node());
 
         var form = new GridPane();
         form.setHgap(10);
@@ -103,7 +105,7 @@ public final class AnalysisRunView {
         validation.getStyleClass().add("field-error");
         var evidenceTitle = new Label("Evidence");
         evidenceTitle.getStyleClass().add("section-title");
-        root.getChildren().addAll(eyebrow, title, form, run, validation, new Separator(), evidenceTitle, evidence);
+        root.getChildren().addAll(eyebrow, title, form, runBar, validation, new Separator(), evidenceTitle, evidence);
 
         updateSecondaryAvailability(method.getValue());
         async.run(() -> datasets.query(study.id(), DatasetQuery.firstPage()), page -> {
@@ -144,10 +146,15 @@ public final class AnalysisRunView {
         var plan = new AnalysisPlan(method.getValue(), primary.getValue().questionId(),
                 secondary.getValue() == null ? null : secondary.getValue().questionId(), filters,
                 version.getValue() == null ? null : version.getValue().id());
-        async.run(() -> analysisService.run(study.id(), plan), this::showEvidence, failure -> {
+        var task = async.run(() -> analysisService.run(study.id(), plan), evidence -> {
+            runBusy.finish();
+            showEvidence(evidence);
+        }, failure -> {
+            runBusy.finish();
             if (failure instanceof ValidationException issue) validation.setText(String.join(" ", issue.errors().values()));
             else errors.accept(failure);
         });
+        runBusy.start(task);
     }
 
     private void showEvidence(EvidenceBundle bundle) {

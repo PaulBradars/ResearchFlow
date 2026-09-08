@@ -36,6 +36,7 @@ public final class AskYourDataView {
     private final Label status = new Label();
     private final Label progress = new Label();
     private final Button ask = new Button("Ask");
+    private final BusyState askBusy = new BusyState();
     private final Study study;
     private final AnalysisFacade facade;
     private final AnalysisService analysisService;
@@ -68,11 +69,12 @@ public final class AskYourDataView {
         status.setWrapText(true);
         progress.getStyleClass().add("muted");
         progress.setWrapText(true);
+        var progressBar = new HBox(8, progress, askBusy.node());
         transcript.setPadding(new Insets(4));
         var scroll = new ScrollPane(transcript);
         scroll.setFitToWidth(true);
 
-        root.getChildren().addAll(eyebrow, title, bar, status, progress, scroll);
+        root.getChildren().addAll(eyebrow, title, bar, status, progressBar, scroll);
         VBox.setVgrow(scroll, Priority.ALWAYS);
         checkAvailability();
         refresh();
@@ -107,8 +109,9 @@ public final class AskYourDataView {
         ask.setDisable(true);
         progress.setText("Thinking… a local model can take up to a minute, especially on the first "
                 + "request while it loads.");
-        async.run(() -> facade.ask(study.id(), text), answer -> {
+        var task = async.run(() -> facade.ask(study.id(), text), answer -> {
             progress.setText("");
+            askBusy.finish();
             question.clear();
             checkAvailability();
             var now = java.time.Instant.now();
@@ -119,10 +122,15 @@ public final class AskYourDataView {
                     analysisService, findingService, async, errors));
         }, failure -> {
             progress.setText("");
+            askBusy.finish();
             checkAvailability();
             if (failure instanceof ValidationException issue) status.setText(String.join(" ", issue.errors().values()));
             else if (failure instanceof LlmException llmFailure) status.setText(describe(llmFailure));
             else errors.accept(failure);
+        });
+        askBusy.start(task, () -> {
+            progress.setText("");
+            ask.setDisable(false);
         });
     }
 

@@ -40,6 +40,7 @@ public final class QualityIssuesView {
     private final TableView<QualityIssue> table = new TableView<>();
     private final ComboBox<QualityIssueStatus> statusFilter = new ComboBox<>();
     private final Label status = new Label();
+    private final BusyState scanBusy = new BusyState();
     private final Study study;
     private final QualityService quality;
     private final QualityReviewService review;
@@ -68,7 +69,7 @@ public final class QualityIssuesView {
         var scan = new Button("Scan for quality issues");
         scan.getStyleClass().add("primary-button");
         scan.setOnAction(event -> scan());
-        var toolbar = new HBox(10, new Label("Status"), statusFilter, scan, status);
+        var toolbar = new HBox(10, new Label("Status"), statusFilter, scan, status, scanBusy.node());
         toolbar.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
         table.setPlaceholder(new Label("No quality issues in this status."));
@@ -134,12 +135,14 @@ public final class QualityIssuesView {
 
     private void scan() {
         table.setDisable(true);
-        async.run(() -> quality.scan(study.id()), issues -> {
+        var task = async.run(() -> quality.scan(study.id()), issues -> {
             table.setDisable(false);
+            scanBusy.finish();
             statusFilter.setValue(QualityIssueStatus.OPEN);
             table.getItems().setAll(quality.list(study.id(), QualityIssueStatus.OPEN));
             status.setText("Scan complete: " + table.getItems().size() + " open issue(s)");
-        }, failure -> { table.setDisable(false); errors.accept(failure); });
+        }, failure -> { table.setDisable(false); scanBusy.finish(); errors.accept(failure); });
+        scanBusy.start(task, () -> table.setDisable(false));
     }
 
     private void review(QualityIssue issue) {
