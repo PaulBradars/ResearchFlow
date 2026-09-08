@@ -184,3 +184,4 @@ public final class DatasetWorkspaceView {
 
     private static UUID questionId(DatasetVariable variable) { return variable == null ? null : variable.questionId(); }
 }
+

@@ -139,3 +139,4 @@ class FullLifecycleAcceptanceTest {
         assertTrue(hasReportEvent);
     }
 }
+

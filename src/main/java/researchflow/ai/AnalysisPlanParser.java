@@ -12,18 +12,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Defensively parses the LLM's raw plan-generation output into an {@link AnalysisPlan}. Any
- * structural problem — missing fields, an unsupported method name, an unparseable or out-of-Study
- * variable ID, an unsupported filter operator — raises {@link LlmException} with
- * {@code Kind.MALFORMED_RESPONSE} rather than guessing or silently defaulting.
- *
- * <p>A structurally valid plan can still be semantically unsupported (wrong variable type for the
- * method, duplicate variables, an invalid filter value). This parser does not check any of that:
- * the resulting plan is always run through the exact same {@code AnalysisPlanValidator} that
- * manual analysis uses, inside {@code AnalysisService.run}, so a hallucinated-but-well-formed plan
- * is rejected there with a {@code ValidationException} — never executed.
- */
 public final class AnalysisPlanParser {
     private AnalysisPlanParser() { }
 
@@ -92,3 +80,4 @@ public final class AnalysisPlanParser {
         return new LlmException(LlmException.Kind.MALFORMED_RESPONSE, message);
     }
 }
+

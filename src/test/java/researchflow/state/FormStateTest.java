@@ -26,3 +26,4 @@ class FormStateTest {
         assertThrows(IllegalStateException.class, closed::activate);
     }
 }
+

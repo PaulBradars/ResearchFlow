@@ -26,11 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * The manual analysis facade: interpret (schema-aware validation) -> resolve an explicit dataset
- * version -> choose a strategy -> execute -> store evidence. {@code AnalysisFacade} (AI) fronts this
- * with natural-language plan generation but never bypasses validation or execution here.
- */
 public final class AnalysisService {
     private final FormRepository forms;
     private final VersionRepository versions;
@@ -47,11 +42,6 @@ public final class AnalysisService {
         return run(studyId, plan, "MANUAL", null);
     }
 
-    /**
-     * The full pipeline behind both manual analysis and "Ask Your Data": validate -> resolve
-     * version -> execute -> persist. {@code source} is {@code "MANUAL"} or {@code "AI"};
-     * {@code modelMetadata} is {@code null} for manual analyses.
-     */
     public EvidenceBundle run(UUID studyId, AnalysisPlan plan, String source, ModelMetadata modelMetadata) {
         var questions = questionsById(studyId);
         AnalysisPlanValidator.validate(plan, questions);
@@ -73,12 +63,6 @@ public final class AnalysisService {
         return analyses.findByStudy(studyId);
     }
 
-    /**
-     * Re-derives the raw, version-bound numeric values behind a plan's variable(s) — used only for
-     * chart building, never for statistics (those come from the already-computed {@code EvidenceBundle}).
-     * {@code resolvedVersionId} must be the explicit version a prior {@link #run} resolved to, so the
-     * chart is guaranteed to reflect the exact same immutable snapshot as the analysis it illustrates.
-     */
     public ChartValues chartValues(UUID studyId, AnalysisPlan plan, UUID resolvedVersionId) {
         var questions = questionsById(studyId);
         var raw = analyses.loadVersionData(resolvedVersionId);
@@ -98,11 +82,6 @@ public final class AnalysisService {
         return new ChartValues(List.copyOf(primary), secondary == null ? null : List.copyOf(secondary));
     }
 
-    /**
-     * Convenience overload for callers that only have the resulting {@code EvidenceBundle} (e.g.
-     * "Ask Your Data", which never sees the AI-derived plan directly) — reconstructs an equivalent
-     * plan from the bundle's own recorded variables/filters/version, which is always exact.
-     */
     public ChartValues chartValues(UUID studyId, EvidenceBundle evidence) {
         var reconstructedPlan = new AnalysisPlan(evidence.method(), evidence.variables().getFirst().questionId(),
                 evidence.variables().size() > 1 ? evidence.variables().get(1).questionId() : null,
@@ -110,7 +89,6 @@ public final class AnalysisService {
         return chartValues(studyId, reconstructedPlan, evidence.datasetVersionId());
     }
 
-    /** Raw values for one (or a paired two) numeric variable(s), scoped to the exact same filtered, version-bound data. */
     public record ChartValues(List<Double> primary, List<Double> secondary) { }
 
     public StoredAnalysis details(UUID analysisId) {
@@ -118,7 +96,6 @@ public final class AnalysisService {
                 .orElseThrow(() -> new IllegalArgumentException("Analysis not found: " + analysisId));
     }
 
-    /** {@code null} resolves to the Study's active version, auto-creating a baseline snapshot if none exists yet. */
     private DatasetVersion resolveVersion(UUID studyId, UUID requestedVersionId) {
         if (requestedVersionId != null) {
             return versions.findByStudy(studyId).stream().filter(version -> version.id().equals(requestedVersionId))
@@ -150,3 +127,4 @@ public final class AnalysisService {
         return question == null ? "" : question.label();
     }
 }
+

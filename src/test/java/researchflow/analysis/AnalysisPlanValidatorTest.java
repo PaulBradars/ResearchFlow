@@ -82,3 +82,4 @@ class AnalysisPlanValidatorTest {
         assertDoesNotThrow(() -> AnalysisPlanValidator.validate(plan, questions));
     }
 }
+

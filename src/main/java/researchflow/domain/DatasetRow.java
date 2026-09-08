@@ -11,3 +11,4 @@ public record DatasetRow(UUID responseId, UUID formId, String formTitle, String 
         return cells.getOrDefault(questionId, DatasetCell.missing(questionId));
     }
 }
+

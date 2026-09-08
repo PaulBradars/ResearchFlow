@@ -4,3 +4,4 @@ public enum StudyStatus {
     ACTIVE,
     ARCHIVED
 }
+

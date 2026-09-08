@@ -39,3 +39,4 @@ class AiPromptBuilderTest {
         assertTrue(prompt.contains("Sample size is small"));
     }
 }
+

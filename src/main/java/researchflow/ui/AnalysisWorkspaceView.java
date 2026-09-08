@@ -12,7 +12,6 @@ import researchflow.service.VersionService;
 
 import java.util.function.Consumer;
 
-/** Analysis workspace: manual plan builder/evidence panel, Ask Your Data, and a history of every persisted analysis. */
 public final class AnalysisWorkspaceView {
     private final TabPane root;
 
@@ -31,3 +30,4 @@ public final class AnalysisWorkspaceView {
         return root;
     }
 }
+

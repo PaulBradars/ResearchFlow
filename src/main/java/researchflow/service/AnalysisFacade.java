@@ -16,13 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * "Ask Your Data": interpret a natural-language question into a validated {@code AnalysisPlan},
- * execute it through the exact same deterministic pipeline manual analysis uses, then produce a
- * plain-language explanation strictly constrained to the stored evidence. The LLM never computes a
- * result and never bypasses {@code AnalysisPlanValidator} — {@link AnalysisService#run} is the only
- * code that validates and executes, whether the plan came from this facade or the manual UI.
- */
 public final class AnalysisFacade {
     private final LlmClient llm;
     private final FormRepository forms;
@@ -68,7 +61,6 @@ public final class AnalysisFacade {
         return chat.findByStudy(studyId, 250);
     }
 
-    /** An explanation failure never invalidates the already-computed, already-persisted evidence. */
     private String explain(researchflow.domain.EvidenceBundle evidence) {
         try {
             return llm.complete(AiPromptBuilder.EXPLANATION_SYSTEM_PROMPT, AiPromptBuilder.explanationPrompt(evidence));
@@ -86,3 +78,4 @@ public final class AnalysisFacade {
         return map;
     }
 }
+

@@ -65,3 +65,4 @@ public final class StudyService {
         return repository.findById(id).orElseThrow(() -> new IllegalArgumentException("Study not found: " + id));
     }
 }
+

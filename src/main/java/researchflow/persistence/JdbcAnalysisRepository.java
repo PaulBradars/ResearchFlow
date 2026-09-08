@@ -237,3 +237,4 @@ public final class JdbcAnalysisRepository implements AnalysisRepository {
         return builder.append(']').toString();
     }
 }
+

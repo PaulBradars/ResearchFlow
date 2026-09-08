@@ -10,3 +10,4 @@ final class DraftFormState implements FormState {
     public FormStatus activate() { return FormStatus.ACTIVE; }
     public FormStatus close() { throw new IllegalStateException("Activate the form before closing it."); }
 }
+

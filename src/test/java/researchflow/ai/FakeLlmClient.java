@@ -4,11 +4,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.Supplier;
 
-/**
- * A configurable {@link LlmClient} test double. Never touches a network — the standard test suite
- * must not depend on a real local AI runtime. Queue responses/failures in the exact order your
- * test expects {@link #complete} to be called (plan generation, then explanation, per {@code ask}).
- */
 public final class FakeLlmClient implements LlmClient {
     private final Deque<Supplier<String>> queue = new ArrayDeque<>();
     private boolean available;
@@ -51,3 +46,4 @@ public final class FakeLlmClient implements LlmClient {
         return queue.pollFirst().get();
     }
 }
+

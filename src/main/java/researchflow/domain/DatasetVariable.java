@@ -9,3 +9,4 @@ public record DatasetVariable(UUID questionId, UUID formId, String formTitle, St
     public DatasetVariable { options = List.copyOf(options); }
     @Override public String toString() { return formTitle + " · " + label; }
 }
+

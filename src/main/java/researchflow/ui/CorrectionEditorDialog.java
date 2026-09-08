@@ -75,3 +75,4 @@ public final class CorrectionEditorDialog {
     private record Editor(Node node, Supplier<String> value) { }
     public record Values(String rawValue, String reason) { }
 }
+

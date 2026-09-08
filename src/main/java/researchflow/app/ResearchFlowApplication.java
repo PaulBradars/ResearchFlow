@@ -79,3 +79,4 @@ public final class ResearchFlowApplication extends Application {
         executor.shutdownNow();
     }
 }
+

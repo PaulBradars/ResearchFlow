@@ -7,7 +7,6 @@ import researchflow.domain.AnalysisResult;
 import java.util.ArrayList;
 import java.util.Collections;
 
-/** n, missing count, mean, median, sample standard deviation, minimum, and maximum for one NUMBER variable. */
 public final class NumericSummaryStrategy implements AnalysisStrategy {
     @Override
     public AnalysisMethod method() {
@@ -30,3 +29,4 @@ public final class NumericSummaryStrategy implements AnalysisStrategy {
                 Statistics.standardDeviation(values, mean), Collections.min(values), Collections.max(values));
     }
 }
+

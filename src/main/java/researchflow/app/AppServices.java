@@ -144,3 +144,4 @@ public final class AppServices {
     public FindingService findings() { return findings; }
     public ReportService reports() { return reports; }
 }
+

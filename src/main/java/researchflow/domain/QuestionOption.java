@@ -19,3 +19,4 @@ public record QuestionOption(UUID id, String value, String label) {
         return value == null ? "" : value.strip();
     }
 }
+

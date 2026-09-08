@@ -62,7 +62,6 @@ class JdbcQualityRepositoryTest {
         assertTrue(fixture.auditRepository().findByStudy(fixture.studyId(), 250).stream()
                 .anyMatch(event -> event.eventType().equals("RESPONSE_EXCLUDED")));
 
-        // The excluded response no longer contributes new issues; only its resolved history remains.
         var afterExclusion = fixture.quality().scan(fixture.studyId());
         assertTrue(afterExclusion.stream()
                 .filter(issue -> issue.responseId() != null && issue.responseId().equals(fixture.dirtyResponseId()))
@@ -88,7 +87,6 @@ class JdbcQualityRepositoryTest {
         var accepted = fixture.review().apply(new ReviewCommand.Accept(duplicate.id(), "Two genuinely separate submissions"));
         assertEquals(QualityIssueStatus.ACCEPTED, accepted.status());
 
-        // Re-scanning must not create a second issue for the same still-present duplicate condition.
         var rescanned = fixture.quality().scan(fixture.studyId());
         assertEquals(1, rescanned.stream().filter(issue -> issue.type() == QualityIssueType.DUPLICATE_RESPONSE).count());
         assertEquals(1, fixture.quality().list(fixture.studyId(), QualityIssueStatus.ACCEPTED).size());
@@ -150,3 +148,4 @@ class JdbcQualityRepositoryTest {
                            UUID dirtyResponseId, ResponseSubmissionService submissions, QualityService quality,
                            QualityReviewService review, AuditRepository auditRepository) { }
 }
+

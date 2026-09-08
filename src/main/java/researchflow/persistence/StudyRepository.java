@@ -16,3 +16,4 @@ public interface StudyRepository {
 
     StudyMetrics metrics(UUID studyId);
 }
+

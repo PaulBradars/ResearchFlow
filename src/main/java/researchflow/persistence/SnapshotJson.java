@@ -4,11 +4,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.regex.Pattern;
 
-/**
- * Shared read/write for the small JSON shape stored in {@code version_answer_snapshots.value_json}.
- * Used by {@link JdbcVersionRepository} (restore) and {@link JdbcAnalysisRepository} (analysis reads),
- * so the encoding stays in one place.
- */
 final class SnapshotJson {
     private SnapshotJson() { }
 
@@ -49,10 +44,10 @@ final class SnapshotJson {
         return value.replace("\\\"", "\"").replace("\\n", "\n").replace("\\r", "\r").replace("\\\\", "\\");
     }
 
-    /** {@code bool} is stored as SQLite's 0/1 integer, matching {@code answers.value_boolean}. */
     record Value(String text, Double number, Integer bool, String date) {
         boolean isMissing() {
             return text == null && number == null && bool == null && date == null;
         }
     }
 }
+

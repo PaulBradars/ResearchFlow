@@ -28,11 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * Imports an external CSV file into this Study as a new Form and Responses. Reuses the existing
- * collection pipeline, so the result is immediately usable from Dataset, Quality, Versions, and
- * Analysis with no separate code path.
- */
 public final class ImportWorkspaceView {
     private final VBox root = new VBox(16);
     private final TextField title = new TextField();
@@ -219,3 +214,4 @@ public final class ImportWorkspaceView {
         }
     }
 }
+

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-/** Builds the initial, editable column plan for a parsed CSV document. */
 public final class ImportPlanner {
     private ImportPlanner() { }
 
@@ -24,3 +23,4 @@ public final class ImportPlanner {
         return List.copyOf(plans);
     }
 }
+

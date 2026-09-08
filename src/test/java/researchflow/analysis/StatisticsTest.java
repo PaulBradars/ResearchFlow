@@ -50,3 +50,4 @@ class StatisticsTest {
         assertEquals(Math.sqrt(10.0), result.cohensD(), 1e-6);
     }
 }
+

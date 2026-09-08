@@ -5,3 +5,4 @@ public final class PersistenceException extends RuntimeException {
         super(message, cause);
     }
 }
+

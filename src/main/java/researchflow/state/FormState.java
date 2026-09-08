@@ -16,3 +16,4 @@ public sealed interface FormState permits DraftFormState, ActiveFormState, Close
         };
     }
 }
+

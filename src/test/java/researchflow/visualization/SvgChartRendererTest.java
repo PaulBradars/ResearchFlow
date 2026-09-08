@@ -57,3 +57,4 @@ class SvgChartRendererTest {
         return count;
     }
 }
+

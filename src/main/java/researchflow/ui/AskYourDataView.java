@@ -23,10 +23,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * "Ask Your Data": a natural-language question is turned into a validated, executed, persisted
- * analysis exactly like the manual panel, then explained in plain language — never the reverse.
- */
 public final class AskYourDataView {
     private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault());
 
@@ -159,3 +155,4 @@ public final class AskYourDataView {
         return box;
     }
 }
+

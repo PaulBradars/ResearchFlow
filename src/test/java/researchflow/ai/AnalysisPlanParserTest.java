@@ -80,3 +80,4 @@ class AnalysisPlanParserTest {
         assertThrows(LlmException.class, () -> AnalysisPlanParser.parse(raw, questions));
     }
 }
+

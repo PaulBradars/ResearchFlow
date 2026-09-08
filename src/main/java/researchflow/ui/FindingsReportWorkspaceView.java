@@ -9,7 +9,6 @@ import researchflow.service.ReportService;
 
 import java.util.function.Consumer;
 
-/** Findings / Report workspace: the finding review queue, plus report preview and HTML export. */
 public final class FindingsReportWorkspaceView {
     private final TabPane root;
 
@@ -25,3 +24,4 @@ public final class FindingsReportWorkspaceView {
         return root;
     }
 }
+

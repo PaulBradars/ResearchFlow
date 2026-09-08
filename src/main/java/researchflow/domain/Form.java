@@ -40,3 +40,4 @@ public record Form(UUID id, UUID studyId, String title, String description, Form
         return value == null ? "" : value.strip();
     }
 }
+

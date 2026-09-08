@@ -15,11 +15,6 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
 
-/**
- * Flags responses within the same form whose full answer set exactly matches an earlier
- * response, in submission order. The earliest response in a matching group is treated as the
- * original and is not itself flagged.
- */
 public final class DuplicateResponseHandler extends QualityHandler {
     private static final DateTimeFormatter TIMESTAMP =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
@@ -67,3 +62,4 @@ public final class DuplicateResponseHandler extends QualityHandler {
         return id.toString().substring(0, 8);
     }
 }
+

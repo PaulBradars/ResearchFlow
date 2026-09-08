@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
 
-/** A contingency table of counts for two categorical variables, restricted to pairwise-complete responses. */
 public final class CrossTabulationStrategy implements AnalysisStrategy {
     @Override
     public AnalysisMethod method() {
@@ -45,3 +44,4 @@ public final class CrossTabulationStrategy implements AnalysisStrategy {
         return new AnalysisResult.CrossTabulation(rows, columns, List.copyOf(counts), pairs.size());
     }
 }
+

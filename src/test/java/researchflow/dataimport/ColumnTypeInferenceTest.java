@@ -29,3 +29,4 @@ class ColumnTypeInferenceTest {
         assertEquals(QuestionType.SHORT_TEXT, ColumnTypeInference.infer(List.of("", "", "  ")));
     }
 }
+

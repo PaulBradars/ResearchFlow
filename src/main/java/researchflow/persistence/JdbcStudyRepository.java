@@ -188,3 +188,4 @@ public final class JdbcStudyRepository implements StudyRepository {
         return value == null ? null : LocalDate.parse(value);
     }
 }
+

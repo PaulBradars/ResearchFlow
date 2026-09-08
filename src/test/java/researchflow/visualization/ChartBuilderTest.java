@@ -92,3 +92,4 @@ class ChartBuilderTest {
         return new EvidenceBundle(UUID.randomUUID(), method, variables, List.of(), 5, result, List.of(), UUID.randomUUID());
     }
 }
+

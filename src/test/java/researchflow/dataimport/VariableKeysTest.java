@@ -44,3 +44,4 @@ class VariableKeysTest {
         assertEquals(64, key.length());
     }
 }
+

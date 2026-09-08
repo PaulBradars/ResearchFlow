@@ -38,9 +38,8 @@ class JdbcAnalysisRepositoryTest {
         assertEquals(AnalysisMethod.NUMERIC_SUMMARY, numeric.method());
         assertEquals(4, numeric.sampleSize());
         var summary = (AnalysisResult.NumericSummary) numeric.result();
-        assertEquals(6.5, summary.mean(), 1e-9); // (5+6+7+8)/4
+        assertEquals(6.5, summary.mean(), 1e-9);
 
-        // No version existed yet, so run() must have auto-created a baseline snapshot bound to this analysis.
         assertNotNull(numeric.datasetVersionId());
         assertEquals(1, fixture.versions().list(fixture.studyId()).size());
 
@@ -68,7 +67,6 @@ class JdbcAnalysisRepositoryTest {
         var plan = new AnalysisPlan(AnalysisMethod.NUMERIC_SUMMARY, fixture.sleep().id(), null, List.of(), version.id());
         var first = fixture.analysis().run(fixture.studyId(), plan);
 
-        // Correct a live answer after the version was created; the bound analysis must not see it.
         fixture.corrections().correct(fixture.studyId(), fixture.responseIds().getFirst(), fixture.sleep().id(),
                 "1", "Simulated later correction");
 
@@ -93,7 +91,7 @@ class JdbcAnalysisRepositoryTest {
                 fixture.sleep().id(), null,
                 List.of(new AnalysisFilter(fixture.sleep().id(), DatasetFilterOperator.GREATER_THAN, "6")), null));
         var summary = (AnalysisResult.NumericSummary) filtered.result();
-        assertEquals(2, summary.count()); // 7 and 8 hours
+        assertEquals(2, summary.count());
     }
 
     private Fixture fixture() {
@@ -133,3 +131,4 @@ class JdbcAnalysisRepositoryTest {
     private record Fixture(UUID studyId, Question sleep, Question focus, Question studyTime, VersionService versions,
                            AnalysisService analysis, DatasetCorrectionService corrections, List<UUID> responseIds) { }
 }
+

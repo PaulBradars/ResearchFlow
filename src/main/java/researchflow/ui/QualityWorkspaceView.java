@@ -11,7 +11,6 @@ import researchflow.service.VersionService;
 
 import java.util.function.Consumer;
 
-/** Quality / Versions workspace: the issue queue and the dataset version history, as tabs. */
 public final class QualityWorkspaceView {
     private final TabPane root;
 
@@ -27,3 +26,4 @@ public final class QualityWorkspaceView {
         return root;
     }
 }
+

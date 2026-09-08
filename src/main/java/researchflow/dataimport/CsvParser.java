@@ -3,12 +3,6 @@ package researchflow.dataimport;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * A small, hand-rolled CSV reader — comma-delimited, double-quote quoting with {@code ""} as an
- * escaped quote, and quoted fields may contain commas or newlines. Not a full RFC 4180 validator:
- * a stray quote mid-field is tolerated rather than rejected. Blank lines are skipped; ragged rows
- * (wrong column count) are left for the caller to reject per-row rather than failing the whole file.
- */
 public final class CsvParser {
     private CsvParser() { }
 
@@ -65,3 +59,4 @@ public final class CsvParser {
         return new CsvDocument(headers, dataRows);
     }
 }
+

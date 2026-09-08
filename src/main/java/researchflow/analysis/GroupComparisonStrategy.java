@@ -10,10 +10,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Compares a NUMBER outcome across exactly two groups defined by a categorical variable: group
- * n/mean/SD, mean difference, Welch's t-statistic, its degrees of freedom, and Cohen's d.
- */
 public final class GroupComparisonStrategy implements AnalysisStrategy {
     @Override
     public AnalysisMethod method() {
@@ -46,3 +42,4 @@ public final class GroupComparisonStrategy implements AnalysisStrategy {
         return Statistics.compareGroups(groupA.getKey(), groupA.getValue(), groupB.getKey(), groupB.getValue());
     }
 }
+

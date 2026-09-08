@@ -10,10 +10,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * The read-only input a {@link QualityHandler} evaluates. Built once per scan from the
- * authoritative Form/Question definitions and the full typed Response data for the Study.
- */
 public final class QualityScanContext {
     private final UUID studyId;
     private final List<Form> forms;
@@ -37,3 +33,4 @@ public final class QualityScanContext {
     public Optional<Form> form(UUID formId) { return Optional.ofNullable(formsById.get(formId)); }
     public Optional<Question> question(UUID questionId) { return Optional.ofNullable(questionsById.get(questionId)); }
 }
+

@@ -103,7 +103,7 @@ public final class Seeder {
     }
 
     private static int focusRatingFor(double sleepHours, Random random) {
-        // More sleep skews (softly, with noise) toward a higher self-reported focus rating.
+
         var base = 1 + (sleepHours - 4.0) / 6.0 * 4.0;
         var noisy = base + random.nextGaussian() * 0.9;
         return (int) Math.round(clamp(noisy, 1.0, 5.0));
@@ -126,3 +126,4 @@ public final class Seeder {
         return java.util.Arrays.stream(values).map(QuestionOption::create).toList();
     }
 }
+

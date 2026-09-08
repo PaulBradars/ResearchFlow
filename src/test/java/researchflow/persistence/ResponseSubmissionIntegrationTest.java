@@ -39,7 +39,6 @@ class ResponseSubmissionIntegrationTest {
         assertThrows(ValidationException.class,
                 () -> fixture.submissions().submit(fixture.formId(), Instant.now(), raw));
 
-        // Closing after collection must not rewrite answer-referenced questions.
         fixture.forms().close(fixture.formId());
     }
 
@@ -89,3 +88,4 @@ class ResponseSubmissionIntegrationTest {
     private record Fixture(ConnectionFactory connections, java.util.UUID formId, Question number,
                            Question choice, FormService forms, ResponseSubmissionService submissions) { }
 }
+

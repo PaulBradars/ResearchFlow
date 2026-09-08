@@ -31,3 +31,4 @@ class StudyValidatorTest {
         validator.validate(study);
     }
 }
+

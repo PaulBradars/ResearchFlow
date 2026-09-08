@@ -10,3 +10,4 @@ final class ClosedFormState implements FormState {
     public FormStatus activate() { throw new IllegalStateException("Closed forms cannot be reactivated."); }
     public FormStatus close() { throw new IllegalStateException("The form is already closed."); }
 }
+

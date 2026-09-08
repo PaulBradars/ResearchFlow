@@ -8,3 +8,4 @@ public interface AnalysisStrategy {
 
     AnalysisResult execute(AnalysisContext context);
 }
+

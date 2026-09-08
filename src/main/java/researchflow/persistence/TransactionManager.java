@@ -43,7 +43,7 @@ public final class TransactionManager {
         try {
             connection.setAutoCommit(true);
         } catch (SQLException ignored) {
-            // The connection is closed immediately; the original failure remains authoritative.
+
         }
     }
 
@@ -52,3 +52,4 @@ public final class TransactionManager {
         T execute(Connection connection) throws Exception;
     }
 }
+

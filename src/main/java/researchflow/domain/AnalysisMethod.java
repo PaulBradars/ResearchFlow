@@ -18,3 +18,4 @@ public enum AnalysisMethod {
         return displayName;
     }
 }
+

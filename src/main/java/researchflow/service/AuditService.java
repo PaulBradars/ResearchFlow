@@ -15,3 +15,4 @@ public final class AuditService {
         repository.recordEvent(studyId, eventType, entityType, entityId, detailsJson);
     }
 }
+

@@ -40,8 +40,7 @@ class DatasetImportServiceTest {
         var preview = fixture.imports().preview(csv);
         assertEquals(3, preview.columns().size());
         assertEquals(QuestionType.SHORT_TEXT, preview.columns().get(0).type());
-        // One value ("not-a-number") keeps every-value-parses inference conservative here; the researcher
-        // reviewing the preview can still choose NUMBER deliberately, accepting that row will be skipped.
+
         assertEquals(QuestionType.SHORT_TEXT, preview.columns().get(1).type());
 
         var columns = List.of(
@@ -54,8 +53,8 @@ class DatasetImportServiceTest {
         assertEquals(2, result.importedCount());
         assertEquals(2, result.skippedCount());
         assertEquals(2, result.errors().size());
-        assertTrue(result.errors().stream().anyMatch(error -> error.rowNumber() == 4)); // missing required name
-        assertTrue(result.errors().stream().anyMatch(error -> error.rowNumber() == 5)); // non-numeric age
+        assertTrue(result.errors().stream().anyMatch(error -> error.rowNumber() == 4));
+        assertTrue(result.errors().stream().anyMatch(error -> error.rowNumber() == 5));
 
         var form = fixture.formService().require(result.formId());
         assertEquals(FormStatus.ACTIVE, form.status());
@@ -111,3 +110,4 @@ class DatasetImportServiceTest {
     private record Fixture(java.util.UUID studyId, DatasetImportService imports, FormService formService,
                            DatasetService datasets) { }
 }
+

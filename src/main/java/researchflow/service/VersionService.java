@@ -27,7 +27,6 @@ public final class VersionService {
         return repository.createSnapshot(studyId, requireReason(reason), changeSummary == null ? "" : changeSummary.strip());
     }
 
-    /** Restores live data to an earlier version's snapshot by creating a new active version; history is never rewritten. */
     public DatasetVersion restore(UUID studyId, UUID versionId, String reason) {
         return repository.restore(studyId, versionId, requireReason(reason));
     }
@@ -39,3 +38,4 @@ public final class VersionService {
         return normalized;
     }
 }
+

@@ -17,3 +17,4 @@ public final class ResponseQueryService {
         return repository.findByStudy(studyId);
     }
 }
+

@@ -92,3 +92,4 @@ class AnalysisFailurePathsTest {
                            AnalysisService analysis, researchflow.persistence.FormRepository formRepository,
                            researchflow.persistence.ChatRepository chatRepository) { }
 }
+

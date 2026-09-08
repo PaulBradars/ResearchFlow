@@ -63,3 +63,4 @@ public final class JdbcChatRepository implements ChatRepository {
                 row.getString("content"), Instant.parse(row.getString("created_at")));
     }
 }
+

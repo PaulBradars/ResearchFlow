@@ -32,3 +32,4 @@ public final class Async {
         }, ignored -> onSuccess.run(), onFailure);
     }
 }
+

@@ -6,7 +6,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 
-/** A small confirmation dialog collecting a required 3–1,000 character reason/note. */
 public final class ReasonDialog {
     private ReasonDialog() { }
 
@@ -34,3 +33,4 @@ public final class ReasonDialog {
         return dialog;
     }
 }
+

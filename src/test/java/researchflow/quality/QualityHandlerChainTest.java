@@ -135,3 +135,4 @@ class QualityHandlerChainTest {
         return new QualityScanContext(studyId, List.of(form), List.of(responses));
     }
 }
+

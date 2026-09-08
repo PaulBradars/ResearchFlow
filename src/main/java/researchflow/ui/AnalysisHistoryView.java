@@ -22,7 +22,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** Every persisted analysis: method, version, sample size, source, and a raw evidence details view. */
 public final class AnalysisHistoryView {
     private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
             .withZone(ZoneId.systemDefault());
@@ -103,3 +102,4 @@ public final class AnalysisHistoryView {
         }, errors);
     }
 }
+

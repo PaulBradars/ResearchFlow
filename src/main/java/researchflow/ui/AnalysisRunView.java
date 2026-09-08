@@ -29,7 +29,6 @@ import researchflow.service.VersionService;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** The manual analysis panel and evidence panel: build a plan, run it, and inspect the full evidence. */
 public final class AnalysisRunView {
     private final VBox root = new VBox(14);
     private final ComboBox<AnalysisMethod> method = new ComboBox<>();
@@ -163,3 +162,4 @@ public final class AnalysisRunView {
         evidence.getChildren().add(EvidenceActions.createFindingButton(study, bundle, analysisService, findingService, async, errors));
     }
 }
+

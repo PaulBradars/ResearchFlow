@@ -7,11 +7,6 @@ import researchflow.domain.QuestionOption;
 
 import java.util.Collection;
 
-/**
- * Builds the two prompts the facade sends to the LLM. Both are versioned constants so a stored
- * AI-produced analysis/explanation can always be traced back to the exact instructions that
- * produced it.
- */
 public final class AiPromptBuilder {
     public static final String PLAN_PROMPT_VERSION = "plan-v1";
     public static final String EXPLANATION_PROMPT_VERSION = "explain-v1";
@@ -23,7 +18,6 @@ public final class AiPromptBuilder {
 
     private AiPromptBuilder() { }
 
-    /** The system prompt for plan generation: every available variable, the method rules, and the required JSON shape. */
     public static String planPrompt(Collection<Question> questions) {
         var builder = new StringBuilder();
         builder.append("You translate a researcher's natural-language question about their Study's data into a ")
@@ -58,7 +52,6 @@ public final class AiPromptBuilder {
         return builder.toString();
     }
 
-    /** The user-turn prompt for explanation: only what is already in the stored evidence — nothing recomputed. */
     public static String explanationPrompt(EvidenceBundle evidence) {
         var builder = new StringBuilder();
         builder.append("Method: ").append(evidence.method()).append('\n');
@@ -97,3 +90,4 @@ public final class AiPromptBuilder {
         return Math.round(value * 100) / 100.0;
     }
 }
+

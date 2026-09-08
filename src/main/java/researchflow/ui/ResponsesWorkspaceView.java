@@ -43,3 +43,4 @@ public final class ResponsesWorkspaceView {
 
     public Parent node() { return root; }
 }
+

@@ -7,3 +7,4 @@ public record DatasetCell(UUID answerId, UUID questionId, String displayValue, b
         return new DatasetCell(null, questionId, "—", true);
     }
 }
+

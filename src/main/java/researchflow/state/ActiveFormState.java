@@ -10,3 +10,4 @@ final class ActiveFormState implements FormState {
     public FormStatus activate() { throw new IllegalStateException("The form is already active."); }
     public FormStatus close() { return FormStatus.CLOSED; }
 }
+

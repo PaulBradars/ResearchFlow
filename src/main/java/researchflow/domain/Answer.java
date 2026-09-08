@@ -21,3 +21,4 @@ public sealed interface Answer permits Answer.Text, Answer.Number, Answer.Boolea
         }
     }
 }
+

@@ -55,3 +55,4 @@ public record Study(
         return value == null ? "" : value.strip();
     }
 }
+

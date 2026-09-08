@@ -25,7 +25,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** Review queue for draft findings: edit wording, approve, or reject — approval never changes the underlying evidence. */
 public final class FindingsWorkspaceView {
     private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
 
@@ -159,3 +158,4 @@ public final class FindingsWorkspaceView {
         dialog.showAndWait();
     }
 }
+

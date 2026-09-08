@@ -29,12 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * "Ask Your Data" exit-gate checks: at least five representative natural-language questions map
- * to valid plans across every method; malformed/unsupported/hallucinated plans never execute;
- * manual analysis keeps working with no AI; and an explanation failure never loses already-computed
- * evidence. No real LLM is called — {@link FakeLlmClient} stands in for the local runtime.
- */
 class AnalysisFacadeTest {
     @TempDir Path temporaryDirectory;
 
@@ -69,7 +63,7 @@ class AnalysisFacadeTest {
         assertEquals(AnalysisMethod.CROSS_TABULATION, crossTab.evidence().method());
 
         var history = fixture.facade().history(fixture.studyId());
-        assertEquals(10, history.size()); // 5 USER + 5 ASSISTANT turns
+        assertEquals(10, history.size());
         assertEquals(5, history.stream().filter(message -> message.role() == ChatRole.USER).count());
         assertEquals(5, history.stream().filter(message -> message.role() == ChatRole.ASSISTANT).count());
         assertTrue(history.stream().allMatch(message -> message.analysisId() != null));
@@ -85,8 +79,6 @@ class AnalysisFacadeTest {
         fixture.llm().thenRespond(planJson("REGRESSION", fixture.sleep().id(), null));
         assertThrows(LlmException.class, () -> fixture.facade().ask(fixture.studyId(), "Run a regression."));
 
-        // Structurally valid JSON, but CORRELATION against a non-number variable is semantically unsupported.
-        // AnalysisPlanValidator (the same one manual analysis uses) rejects it before any calculation runs.
         fixture.llm().thenRespond(planJson("CORRELATION", fixture.sleep().id(), fixture.studyTime().id()));
         assertThrows(ValidationException.class,
                 () -> fixture.facade().ask(fixture.studyId(), "Correlate sleep with study time preference."));
@@ -159,3 +151,4 @@ class AnalysisFacadeTest {
     private record Fixture(UUID studyId, Question sleep, Question focus, Question studyTime, Question mood,
                            AnalysisService analysisService, AnalysisFacade facade, FakeLlmClient llm) { }
 }
+

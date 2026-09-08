@@ -10,3 +10,4 @@ public interface ChatRepository {
 
     List<ChatMessage> findByStudy(UUID studyId, int limit);
 }
+

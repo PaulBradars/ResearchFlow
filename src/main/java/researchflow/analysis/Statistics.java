@@ -4,13 +4,6 @@ import researchflow.domain.AnalysisResult;
 
 import java.util.List;
 
-/**
- * Deterministic, hand-verifiable arithmetic shared by the strategies. Mean/median/sample standard
- * deviation and Pearson correlation use their textbook formulas directly. The two-group comparison
- * reports Welch's t-statistic, its Welch–Satterthwaite degrees of freedom, and Cohen's d effect
- * size — all computable without a special-function (incomplete beta) library, so no external
- * statistics dependency is required. A p-value is intentionally not reported.
- */
 public final class Statistics {
     private Statistics() { }
 
@@ -25,7 +18,6 @@ public final class Statistics {
         return size % 2 == 1 ? sorted.get(size / 2) : (sorted.get(size / 2 - 1) + sorted.get(size / 2)) / 2.0;
     }
 
-    /** Sample standard deviation (n-1 denominator); 0 when fewer than two values are given. */
     public static double standardDeviation(List<Double> values, double mean) {
         if (values.size() < 2) return 0;
         var sumSquares = values.stream().mapToDouble(value -> (value - mean) * (value - mean)).sum();
@@ -70,3 +62,4 @@ public final class Statistics {
                 meanA - meanB, t, degreesOfFreedom, cohensD);
     }
 }
+

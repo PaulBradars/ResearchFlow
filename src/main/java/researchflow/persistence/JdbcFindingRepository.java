@@ -162,8 +162,6 @@ public final class JdbcFindingRepository implements FindingRepository {
                 approvedAt == null ? null : Instant.parse(approvedAt));
     }
 
-    // --- chart_json codec: every ChartSpec variant is a flat list of primitives, so this stays self-contained. ---
-
     private static String chartJson(ChartSpec chart) {
         return switch (chart) {
             case ChartSpec.Bar bar -> "{\"type\":\"bar\",\"title\":\"" + esc(bar.title()) + "\",\"xLabel\":\""
@@ -266,3 +264,4 @@ public final class JdbcFindingRepository implements FindingRepository {
         return value.replace("\\\"", "\"").replace("\\n", "\n").replace("\\r", "\r").replace("\\\\", "\\");
     }
 }
+

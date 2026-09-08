@@ -45,3 +45,4 @@ class CsvParserTest {
         assertThrows(ImportException.class, () -> CsvParser.parse(""));
     }
 }
+

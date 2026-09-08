@@ -9,3 +9,4 @@ public record DatasetPage(List<DatasetVariable> variables, List<DatasetRow> rows
         rows = List.copyOf(rows);
     }
 }
+

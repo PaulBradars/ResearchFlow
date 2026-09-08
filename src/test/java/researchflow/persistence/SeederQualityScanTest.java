@@ -13,11 +13,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * The Phase 3 development seed deliberately embeds one duplicate pair, one statistical outlier,
- * and one unusually fast submission (see PHASE_3_HANDOFF.md). This confirms the Phase 4 handler
- * chain actually surfaces them, without inventing a separate fixture.
- */
 class SeederQualityScanTest {
     @TempDir Path temporaryDirectory;
 
@@ -44,3 +39,4 @@ class SeederQualityScanTest {
                 .noneMatch(types::contains), "the seed's optional blanks and valid ranges must not be misflagged");
     }
 }
+

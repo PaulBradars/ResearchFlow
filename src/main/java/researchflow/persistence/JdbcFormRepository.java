@@ -29,7 +29,7 @@ public final class JdbcFormRepository implements FormRepository {
     public void save(Form form, String auditEventType) {
         transactions.inTransaction(connection -> {
             upsertForm(connection, form);
-            // Lifecycle-only changes must not delete/reinsert questions already referenced by answers.
+
             if ("FORM_CREATED".equals(auditEventType) || "FORM_UPDATED".equals(auditEventType)) {
                 replaceStructure(connection, form);
             }
@@ -222,3 +222,4 @@ public final class JdbcFormRepository implements FormRepository {
         }
     }
 }
+

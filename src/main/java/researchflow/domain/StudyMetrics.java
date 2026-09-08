@@ -6,3 +6,4 @@ public record StudyMetrics(long forms, long responses, long unresolvedIssues,
         return new StudyMetrics(0, 0, 0, 0, 0, 0);
     }
 }
+

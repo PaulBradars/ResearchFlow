@@ -16,3 +16,4 @@ public final class ValidationException extends RuntimeException {
         return errors;
     }
 }
+

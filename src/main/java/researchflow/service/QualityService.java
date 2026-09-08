@@ -22,7 +22,6 @@ public final class QualityService {
         this.quality = quality;
     }
 
-    /** Runs the deterministic handler chain and persists any newly detected issues. Never changes data. */
     public List<QualityIssue> scan(UUID studyId) {
         var context = new QualityScanContext(studyId, forms.findByStudy(studyId), responses.findFullByStudy(studyId));
         var detected = QualityHandlerChain.buildDefault().handle(context);
@@ -34,3 +33,4 @@ public final class QualityService {
         return quality.findByStudy(studyId, status);
     }
 }
+

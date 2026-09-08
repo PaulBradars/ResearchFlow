@@ -53,3 +53,4 @@ class JdbcStudyRepositoryTest {
         assertTrue(reopened.find(created.id()).isPresent());
     }
 }
+

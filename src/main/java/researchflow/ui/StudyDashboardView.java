@@ -67,3 +67,4 @@ public final class StudyDashboardView {
         return card;
     }
 }
+

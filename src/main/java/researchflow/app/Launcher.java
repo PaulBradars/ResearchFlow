@@ -8,3 +8,4 @@ public final class Launcher {
         ResearchFlowApplication.main(args);
     }
 }
+

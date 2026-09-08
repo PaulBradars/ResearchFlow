@@ -16,7 +16,6 @@ import researchflow.service.ReportService;
 
 import java.util.function.Consumer;
 
-/** Composes the current report on demand and offers a self-contained HTML export. */
 public final class ReportWorkspaceView {
     private final VBox root = new VBox(16);
     private final VBox preview = new VBox(10);
@@ -159,3 +158,4 @@ public final class ReportWorkspaceView {
         return label;
     }
 }
+

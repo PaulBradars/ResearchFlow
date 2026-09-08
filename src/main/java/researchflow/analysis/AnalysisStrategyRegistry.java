@@ -7,7 +7,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-/** Simple Factory / registry for the reduced-MVP analysis strategies. */
 public final class AnalysisStrategyRegistry {
     private AnalysisStrategyRegistry() { }
 
@@ -20,3 +19,4 @@ public final class AnalysisStrategyRegistry {
         return Collections.unmodifiableMap(strategies);
     }
 }
+

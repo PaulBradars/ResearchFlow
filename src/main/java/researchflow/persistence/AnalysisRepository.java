@@ -12,13 +12,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface AnalysisRepository {
-    /** Reconstructs every typed answer captured in one dataset version's immutable snapshot. */
+
     List<VersionAnswer> loadVersionData(UUID datasetVersionId);
 
-    /**
-     * Persists the plan, result, sample size, warnings, source ('MANUAL' or 'AI'), and explicit
-     * version reference; returns the new id. {@code modelMetadata} is {@code null} for manual analyses.
-     */
     UUID save(UUID studyId, UUID datasetVersionId, AnalysisPlan plan, AnalysisResult result, int sampleSize,
               List<String> warnings, String source, ModelMetadata modelMetadata);
 
@@ -26,3 +22,4 @@ public interface AnalysisRepository {
 
     Optional<StoredAnalysis> findById(UUID analysisId);
 }
+

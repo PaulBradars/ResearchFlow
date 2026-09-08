@@ -8,11 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * The sole interpreter of {@link ReviewCommand}s. Every branch requires researcher confirmation
- * upstream (enforced by the UI) plus a reason/note, and every branch results in an audited status
- * change through {@code QualityRepository} — no command deletes or silently edits data.
- */
 public final class QualityReviewService {
     private final QualityRepository quality;
     private final DatasetCorrectionService corrections;
@@ -40,7 +35,6 @@ public final class QualityReviewService {
         return quality.findById(issue.id()).orElseThrow();
     }
 
-    /** Applies each command independently; a later failure does not undo earlier successful ones. */
     public List<QualityIssue> applyAll(List<ReviewCommand> commands) {
         var results = new ArrayList<QualityIssue>();
         for (var command : commands) results.add(apply(command));
@@ -54,3 +48,4 @@ public final class QualityReviewService {
         return normalized;
     }
 }
+

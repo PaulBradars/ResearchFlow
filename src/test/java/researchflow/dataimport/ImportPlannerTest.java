@@ -36,3 +36,4 @@ class ImportPlannerTest {
         assertEquals("column_2", columns.get(1).variableKey());
     }
 }
+

@@ -36,11 +36,7 @@ public final class ConnectionFactory {
             try (Statement statement = connection.createStatement()) {
                 statement.execute("PRAGMA foreign_keys = ON");
                 statement.execute("PRAGMA busy_timeout = 5000");
-                // WAL + NORMAL trade a small, well-understood durability window (the last few OS-cached
-                // writes on a hard power loss) for a large reduction in per-transaction fsync cost — the
-                // standard recommendation for write-heavy SQLite workloads such as a bulk dataset import
-                // or a large version snapshot, and it also shortens how long a writer holds the lock,
-                // reducing SQLITE_BUSY collisions with concurrent reads/writes.
+
                 statement.execute("PRAGMA journal_mode = WAL");
                 statement.execute("PRAGMA synchronous = NORMAL");
             }
@@ -50,3 +46,4 @@ public final class ConnectionFactory {
         }
     }
 }
+

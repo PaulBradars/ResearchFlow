@@ -96,3 +96,4 @@ public final class StudyEditorDialog extends Dialog<StudyEditorDialog.Values> {
                          LocalDate startDate, LocalDate endDate, List<String> researchQuestions) {
     }
 }
+

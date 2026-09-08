@@ -39,7 +39,7 @@ class JdbcVersionRepositoryTest {
             statement.setString(1, version.id().toString());
             try (var rows = statement.executeQuery()) {
                 rows.next();
-                assertEquals(4, rows.getInt(1)); // 2 responses x 2 answered questions
+                assertEquals(4, rows.getInt(1));
             }
         }
     }
@@ -64,7 +64,6 @@ class JdbcVersionRepositoryTest {
         assertTrue(v3.reason().contains("Restored to version 1"));
         assertTrue(v3.active());
 
-        // Restore rolls back to v1's snapshot: the correction is undone and the exclusion is lifted.
         assertEquals("24.0", currentValue(fixture, fixture.adaResponseId(), fixture.age().id()));
         assertEquals("COMPLETE", responseStatus(fixture, fixture.graceResponseId()));
 
@@ -126,3 +125,4 @@ class JdbcVersionRepositoryTest {
     private record Fixture(ConnectionFactory connections, UUID studyId, Question age, VersionService versions,
                            DatasetCorrectionService corrections, UUID adaResponseId, UUID graceResponseId) { }
 }
+

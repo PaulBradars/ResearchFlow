@@ -38,3 +38,4 @@ public record Question(UUID id, String variableKey, String label, String helpTex
         return value == null ? "" : value.strip();
     }
 }
+

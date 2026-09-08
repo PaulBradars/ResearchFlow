@@ -10,21 +10,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * A local-runtime HTTP adapter targeting an Ollama-compatible {@code /api/generate}/{@code /api/tags}
- * API (non-streaming). Configuration (base URL, model, timeout) comes from {@code AppConfig} so the
- * runtime and model can be swapped without a code change.
- *
- * <p>The configured model is a hint, not an assumption: a blank model (the shipped default)
- * auto-selects whichever model is actually installed, so a fresh machine with any single model
- * pulled works with no configuration at all. An explicitly configured model that turns out not to be
- * installed produces a clear, actionable error — naming what is actually available — rather than a
- * bare HTTP status code. Resolution happens once per client instance and is then cached.
- *
- * <p>Cancellation of an in-flight request is provided by ordinary Java thread interruption —
- * {@code ResearchFlowApplication.stop()} already calls {@code executor.shutdownNow()}, which
- * interrupts any blocked HTTP call running on the background executor.
- */
 public final class LocalLlmClient implements LlmClient {
     private final HttpClient http;
     private final URI generateEndpoint;
@@ -88,7 +73,6 @@ public final class LocalLlmClient implements LlmClient {
         }
     }
 
-    /** Resolves and caches which installed model to use; never silently falls back to a guessed name. */
     private String resolveModel() {
         var cached = resolvedModel;
         if (cached != null) return cached;
@@ -144,3 +128,4 @@ public final class LocalLlmClient implements LlmClient {
         return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 }
+

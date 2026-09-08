@@ -24,3 +24,4 @@ public record Section(UUID id, String title, String description, List<Question> 
         return value == null ? "" : value.strip();
     }
 }
+

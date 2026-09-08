@@ -15,12 +15,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Composes a {@link ReportDocument} from currently stored Study/quality/version/finding data and
- * exports it as a self-contained HTML file. The report is never itself persisted — it is always a
- * fresh composition, so it can never drift from what those tables currently say. Only unapproved
- * findings are excluded; approved ones are never silently dropped.
- */
 public final class ReportService {
     private final StudyService studies;
     private final FormService forms;
@@ -55,7 +49,6 @@ public final class ReportService {
                 qualitySummary, approved, defaultLimitations(activeVersion), Instant.now());
     }
 
-    /** Composes, writes the HTML file, and records a {@code REPORT_GENERATED} audit event. */
     public Path export(UUID studyId, Path targetFile) {
         var document = compose(studyId);
         try {
@@ -78,3 +71,4 @@ public final class ReportService {
         return List.copyOf(limitations);
     }
 }
+

@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-/** Dataset version history: snapshot creation, active-version tracking, and safe restore. */
 public final class DatasetVersionsView {
     private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
             .withZone(ZoneId.systemDefault());
@@ -156,3 +155,4 @@ public final class DatasetVersionsView {
         }
     }
 }
+

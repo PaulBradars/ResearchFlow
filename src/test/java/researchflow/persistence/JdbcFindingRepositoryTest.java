@@ -42,7 +42,7 @@ class JdbcFindingRepositoryTest {
         assertEquals(chart, finding.chart());
 
         var edited = fixture.findingService().edit(finding.id(), "Focus averages around 3.5 across all respondents.");
-        assertEquals(evidence.id(), edited.analysisId()); // wording changes never move the analysis/version link
+        assertEquals(evidence.id(), edited.analysisId());
         assertEquals(evidence.datasetVersionId(), edited.datasetVersionId());
         assertEquals("Focus averages around 3.5 across all respondents.", edited.text());
 
@@ -98,3 +98,4 @@ class JdbcFindingRepositoryTest {
     private record Fixture(UUID studyId, Question focus, AnalysisService analysisService,
                            FindingService findingService, AuditRepository auditRepository) { }
 }
+

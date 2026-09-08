@@ -16,3 +16,4 @@ public record Response(UUID id, UUID formId, int formVersion, Instant startedAt,
         return new Response(UUID.randomUUID(), form.id(), form.version(), startedAt, submittedAt, duration, answers);
     }
 }
+

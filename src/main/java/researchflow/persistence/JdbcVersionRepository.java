@@ -89,7 +89,6 @@ public final class JdbcVersionRepository implements VersionRepository {
         });
     }
 
-    /** Flushing in bounded chunks keeps memory flat on a very large Study without losing batching's speed. */
     private static final int BATCH_SIZE = 500;
 
     private static void applySnapshot(Connection connection, UUID targetVersionId) throws SQLException {
@@ -270,3 +269,4 @@ public final class JdbcVersionRepository implements VersionRepository {
     }
 
 }
+

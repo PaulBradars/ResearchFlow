@@ -10,11 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Draft/edit/approve/reject findings. A finding's {@code analysisId}/{@code datasetVersionId} are
- * fixed at creation and never change — editing {@link #edit} only ever touches the wording.
- * Unapproved findings are excluded from the report by default (see {@code ReportService}).
- */
 public final class FindingService {
     private final FindingRepository findings;
 
@@ -22,7 +17,6 @@ public final class FindingService {
         this.findings = findings;
     }
 
-    /** Drafts a finding from a just-computed evidence bundle, with an optional chart derived from the same version. */
     public Finding draft(UUID studyId, EvidenceBundle evidence, String text, ChartSpec chart) {
         var normalized = requireText(text);
         var id = findings.create(studyId, evidence.id(), evidence.datasetVersionId(), normalized,
@@ -49,7 +43,6 @@ public final class FindingService {
         return findings.findByStudy(studyId);
     }
 
-    /** A short, plain-language starting point for a finding's text; always researcher-editable before saving. */
     public static String draftText(EvidenceBundle evidence) {
         return switch (evidence.result()) {
             case AnalysisResult.Frequency ignored ->
@@ -67,7 +60,6 @@ public final class FindingService {
         };
     }
 
-    /** A short metadata line for the report, e.g. "n=24 · CORRELATION · Sleep hours, Focus". */
     public static String evidenceSummary(EvidenceBundle evidence) {
         var variables = evidence.variables().stream().map(EvidenceBundle.VariableRef::label)
                 .reduce((a, b) -> a + ", " + b).orElse("");
@@ -94,3 +86,4 @@ public final class FindingService {
         return normalized;
     }
 }
+

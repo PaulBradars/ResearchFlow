@@ -31,7 +31,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** The reviewable issue queue: deterministic scan results, filters, and review actions. */
 public final class QualityIssuesView {
     private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
             .withZone(ZoneId.systemDefault());
@@ -256,3 +255,4 @@ public final class QualityIssuesView {
         }
     }
 }
+

@@ -122,3 +122,4 @@ class QualityReviewFailurePathsTest {
 
     private record Fixture(ConnectionFactory connections, UUID studyId, QualityService quality, QualityReviewService review) { }
 }
+

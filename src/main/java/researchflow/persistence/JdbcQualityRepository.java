@@ -207,3 +207,4 @@ public final class JdbcQualityRepository implements QualityRepository {
         return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 }
+

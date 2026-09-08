@@ -101,3 +101,4 @@ class ReportServiceTest {
     private record Fixture(UUID studyId, String studyTitle, Question focus, AnalysisService analysisService,
                            FindingService findingService, ReportService reportService, AuditService auditService) { }
 }
+

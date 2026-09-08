@@ -6,10 +6,6 @@ import researchflow.visualization.SvgChartRenderer;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Composes a {@link ReportDocument} into a single self-contained HTML file: no external assets,
- * charts embedded as inline SVG, safe against a Study/finding text containing HTML-special characters.
- */
 public final class ReportHtmlRenderer {
     private static final DateTimeFormatter TIMESTAMP =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
@@ -82,3 +78,4 @@ public final class ReportHtmlRenderer {
         return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 }
+

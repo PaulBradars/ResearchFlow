@@ -8,14 +8,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Chooses and builds the chart for one method's already-computed result: bar for frequency,
- * histogram for a numeric summary, scatter for correlation, and a flattened bar for cross-tabulation
- * and group comparison (grouped/box-plot charts remain optional per the reduced-MVP chart set).
- * Histogram and scatter need the raw, version-bound values behind the aggregated statistics —
- * {@code primaryValues}/{@code secondaryValues} come from {@code AnalysisService.chartValues}, read
- * from the same immutable dataset-version snapshot the analysis itself was computed against.
- */
 public final class ChartBuilder {
     private static final int MAX_BINS = 10;
 
@@ -90,3 +82,4 @@ public final class ChartBuilder {
         return rounded == Math.floor(rounded) ? Long.toString((long) rounded) : String.valueOf(rounded);
     }
 }
+

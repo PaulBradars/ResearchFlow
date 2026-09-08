@@ -12,3 +12,4 @@ final class TestDatabase {
         return connections;
     }
 }
+
