@@ -13,12 +13,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
-/**
- * Builds a demonstration-scale dataset (one curated batch plus a larger generated batch) so every
- * workspace - dataset, quality, versioning, analysis, and reporting - has enough data to be a
- * meaningful demo rather than a handful of placeholder rows. The random generation uses a fixed
- * seed so the dataset (and its embedded quality examples) is identical on every fresh machine.
- */
 public final class Seeder {
     private static final String STUDY_TITLE = "Student Wellbeing and Academic Focus";
     private static final int GENERATED_RESPONSE_COUNT = 142;
@@ -70,10 +64,6 @@ public final class Seeder {
                 List.of(form.sections().getFirst().withQuestions(List.of(sleep, screenTime, focus, studyTime, note))));
         form = forms.activate(form.id());
 
-        // Curated rows: {sleepHours, screenTimeHours, focusRating, studyTime, note}. Deliberately embeds
-        // one duplicate pair (rows 2 and 7 match on every field), one statistical outlier (14h sleep),
-        // and one unusually fast submission (row 0, submitted 3 seconds after it started) - see
-        // SeederQualityScanTest, which asserts the Phase 4 quality handlers surface exactly these.
         var curated = List.of(
                 new String[]{"7.5", "2.0", "4", "Morning", "Quiet study session"},
                 new String[]{"6", "4.0", "3", "Evening", ""},
@@ -89,9 +79,6 @@ public final class Seeder {
             submitRow(form, questions, curated.get(index), Instant.now().minusSeconds(index == 0 ? 3 : 30 + index * 8L));
         }
 
-        // Generated rows: sleep hours drawn from a clipped normal distribution around 6.8h, with
-        // screen time before bed negatively correlated to sleep (more screen time, less sleep) so the
-        // correlation analysis strategy has a real, demonstrable relationship to find.
         var random = new Random(RANDOM_SEED);
         var studyTimes = new String[]{"Morning", "Afternoon", "Evening"};
         for (int index = 0; index < GENERATED_RESPONSE_COUNT; index++) {
