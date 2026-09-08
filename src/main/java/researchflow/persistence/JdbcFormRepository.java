@@ -87,6 +87,10 @@ public final class JdbcFormRepository implements FormRepository {
     }
 
     private static void replaceStructure(Connection connection, Form form) throws SQLException {
+        try (var delete = connection.prepareStatement("DELETE FROM questions WHERE form_id = ?")) {
+            delete.setString(1, form.id().toString());
+            delete.executeUpdate();
+        }
         try (var delete = connection.prepareStatement("DELETE FROM form_sections WHERE form_id = ?")) {
             delete.setString(1, form.id().toString());
             delete.executeUpdate();

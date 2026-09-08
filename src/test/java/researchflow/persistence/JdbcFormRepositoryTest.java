@@ -40,5 +40,28 @@ class JdbcFormRepositoryTest {
             try (var rows = statement.executeQuery()) { rows.next(); assertEquals(4, rows.getInt(1)); }
         }
     }
+
+    @Test
+    void addingASecondQuestionToAnAlreadySavedDraftDoesNotFailOnTheFirstQuestionsId() {
+        var connections = TestDatabase.migrated(temporaryDirectory);
+        var transactions = new TransactionManager(connections);
+        var studies = new StudyService(new JdbcStudyRepository(connections, transactions));
+        var study = studies.create("Study", "", "", "", null, null, List.of());
+        var forms = new FormService(new JdbcFormRepository(connections, transactions));
+        var form = forms.create(study.id(), "Intake", "Baseline");
+
+        var first = Question.create("name", "Name", "", QuestionType.SHORT_TEXT, true, null, null, List.of());
+        form = forms.updateStructure(form.id(), form.title(), form.description(),
+                List.of(form.sections().getFirst().withQuestions(List.of(first))));
+
+        var second = Question.create("age", "Age", "", QuestionType.NUMBER, true, 18d, 100d, List.of());
+        form = forms.updateStructure(form.id(), form.title(), form.description(),
+                List.of(form.sections().getFirst().withQuestions(List.of(first, second))));
+
+        var reloaded = forms.require(form.id());
+        assertEquals(2, reloaded.questions().size());
+        assertEquals(first.id(), reloaded.questions().get(0).id());
+        assertEquals(second.id(), reloaded.questions().get(1).id());
+    }
 }
 
