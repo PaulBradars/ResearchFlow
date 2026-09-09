@@ -20,9 +20,10 @@ class JdbcFormRepositoryTest {
     void draftStructureAndLifecyclePersistWithStableQuestionIdAndAudit() throws Exception {
         var connections = TestDatabase.migrated(temporaryDirectory);
         var transactions = new TransactionManager(connections);
+        var writeGuard = new researchflow.service.StudyWriteGuard(new JdbcStudyRepository(connections, transactions));
         var studies = new StudyService(new JdbcStudyRepository(connections, transactions));
         var study = studies.create("Study", "", "", "", null, null, List.of());
-        var forms = new FormService(new JdbcFormRepository(connections, transactions));
+        var forms = new FormService(new JdbcFormRepository(connections, transactions), writeGuard);
         var form = forms.create(study.id(), "Intake", "Baseline");
         var question = Question.create("age", "Age", "", QuestionType.NUMBER, true, 18d, 100d, List.of());
         var section = form.sections().getFirst().withQuestions(List.of(question));

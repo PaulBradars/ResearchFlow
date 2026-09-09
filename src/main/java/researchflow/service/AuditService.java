@@ -7,7 +7,14 @@ import java.util.List;
 import java.util.UUID;
 
 public final class AuditService {
+    private final StudyWriteGuard writeGuard;
     private final AuditRepository repository;
-    public AuditService(AuditRepository repository) { this.repository = repository; }
+    public AuditService(AuditRepository repository, StudyWriteGuard writeGuard) {
+        this.writeGuard = java.util.Objects.requireNonNull(writeGuard); this.repository = repository; }
     public List<AuditEvent> timeline(UUID studyId) { return repository.findByStudy(studyId, 250); }
+
+    public void record(UUID studyId, String eventType, String entityType, UUID entityId, String detailsJson) {
+        writeGuard.requireWritable(studyId);
+        repository.recordEvent(studyId, eventType, entityType, entityId, detailsJson);
+    }
 }

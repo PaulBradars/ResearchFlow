@@ -1,0 +1,28 @@
+name: Desktop build
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Clean tests (Unix)
+        if: runner.os != 'Windows'
+        run: bash mvnw -B -ntp clean verify
+      - name: Clean tests (Windows)
+        if: runner.os == 'Windows'
+        run: .\mvnw.cmd -B -ntp clean verify
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}
+          path: target/surefire-reports

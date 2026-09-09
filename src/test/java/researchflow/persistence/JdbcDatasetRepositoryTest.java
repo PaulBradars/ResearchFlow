@@ -88,10 +88,11 @@ class JdbcDatasetRepositoryTest {
     private Fixture fixture() {
         var connections = TestDatabase.migrated(temporaryDirectory);
         var transactions = new TransactionManager(connections);
+        var writeGuard = new researchflow.service.StudyWriteGuard(new JdbcStudyRepository(connections, transactions));
         var study = new StudyService(new JdbcStudyRepository(connections, transactions))
                 .create("Dataset Study", "", "", "", null, null, List.of());
         var formRepository = new JdbcFormRepository(connections, transactions);
-        var forms = new FormService(formRepository);
+        var forms = new FormService(formRepository, writeGuard);
         var form = forms.create(study.id(), "Intake", "");
         var name = Question.create("name", "Name", "", QuestionType.SHORT_TEXT, true, null, null, List.of());
         var age = Question.create("age", "Age", "", QuestionType.NUMBER, true, 18d, 100d, List.of());
@@ -99,12 +100,12 @@ class JdbcDatasetRepositoryTest {
                 List.of(form.sections().getFirst().withQuestions(List.of(name, age))));
         form = forms.activate(form.id());
         var responses = new JdbcResponseRepository(connections, transactions);
-        var submissions = new ResponseSubmissionService(formRepository, responses);
+        var submissions = new ResponseSubmissionService(formRepository, responses, writeGuard);
         submissions.submit(form.id(), Instant.now(), Map.of(name.id(), "Ada Lovelace", age.id(), "24"));
         submissions.submit(form.id(), Instant.now(), Map.of(name.id(), "Grace", age.id(), "36"));
         var repository = new JdbcDatasetRepository(connections, transactions);
         return new Fixture(connections, study.id(), name, age, repository,
-                new DatasetService(repository, formRepository), new DatasetCorrectionService(repository, formRepository));
+                new DatasetService(repository, formRepository), new DatasetCorrectionService(repository, formRepository, writeGuard));
     }
 
     private static int count(java.sql.Connection connection, String table) throws Exception {

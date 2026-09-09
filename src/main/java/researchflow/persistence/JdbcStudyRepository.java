@@ -23,9 +23,25 @@ public final class JdbcStudyRepository implements StudyRepository {
         this.transactions = transactions;
     }
 
+    static void requireWritable(java.sql.Connection connection, UUID studyId) throws java.sql.SQLException {
+        try (var statement = connection.prepareStatement("SELECT status FROM studies WHERE id=?")) {
+            statement.setString(1, studyId.toString());
+            try (var rows = statement.executeQuery()) {
+                if (!rows.next()) throw new IllegalArgumentException("Study not found: " + studyId);
+                if ("ARCHIVED".equals(rows.getString(1))) throw new IllegalStateException("Archived studies are read-only.");
+            }
+        }
+    }
+
     @Override
     public void save(Study study, String auditEventType) {
         transactions.inTransaction(connection -> {
+            try (var lookup = connection.prepareStatement("SELECT status FROM studies WHERE id=?")) {
+                lookup.setString(1, study.id().toString());
+                try (var rows = lookup.executeQuery()) {
+                    if (rows.next()) requireWritable(connection, study.id());
+                }
+            }
             upsertStudy(connection, study);
             replaceResearchQuestions(connection, study);
             insertAuditEvent(connection, study.id(), auditEventType);
@@ -68,7 +84,7 @@ public final class JdbcStudyRepository implements StudyRepository {
         var sql = """
                 SELECT
                     (SELECT COUNT(*) FROM forms WHERE study_id = ?) AS forms,
-                    (SELECT COUNT(*) FROM responses r JOIN forms f ON f.id = r.form_id WHERE f.study_id = ?) AS responses,
+                    (SELECT COUNT(*) FROM responses r JOIN forms f ON f.id = r.form_id WHERE f.study_id = ? AND r.in_dataset=1) AS responses,
                     (SELECT COUNT(*) FROM quality_issues WHERE study_id = ? AND status IN ('OPEN', 'DEFERRED')) AS issues,
                     (SELECT COUNT(*) FROM dataset_versions WHERE study_id = ?) AS versions,
                     (SELECT COUNT(*) FROM analyses WHERE study_id = ?) AS analyses,

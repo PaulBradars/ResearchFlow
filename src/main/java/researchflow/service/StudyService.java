@@ -2,7 +2,6 @@ package researchflow.service;
 
 import researchflow.domain.Study;
 import researchflow.domain.StudyMetrics;
-import researchflow.domain.StudyStatus;
 import researchflow.persistence.StudyRepository;
 
 import java.time.LocalDate;
@@ -12,10 +11,12 @@ import java.util.UUID;
 
 public final class StudyService {
     private final StudyRepository repository;
+    private final StudyWriteGuard writeGuard;
     private final StudyValidator validator = new StudyValidator();
 
     public StudyService(StudyRepository repository) {
         this.repository = repository;
+        this.writeGuard = new StudyWriteGuard(repository);
     }
 
     public Study create(String title, String description, String objectives, String researcher,
@@ -54,11 +55,7 @@ public final class StudyService {
     }
 
     private Study requireActive(UUID id) {
-        var study = require(id);
-        if (study.status() == StudyStatus.ARCHIVED) {
-            throw new IllegalStateException("Archived studies are read-only.");
-        }
-        return study;
+        return writeGuard.requireWritable(id);
     }
 
     private Study require(UUID id) {

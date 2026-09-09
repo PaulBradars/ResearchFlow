@@ -71,7 +71,7 @@ public final class JdbcDatasetRepository implements DatasetRepository, AuditRepo
              var statement = connection.prepareStatement("""
                      SELECT r.id, r.form_id, f.title, r.status, r.submitted_at, r.duration_seconds
                      FROM responses r JOIN forms f ON f.id=r.form_id
-                     WHERE f.study_id=? AND r.id=?
+                     WHERE f.study_id=? AND r.in_dataset=1 AND r.id=?
                      """)) {
             statement.setString(1, studyId.toString()); statement.setString(2, responseId.toString());
             try (var rows = statement.executeQuery()) {
@@ -90,7 +90,7 @@ public final class JdbcDatasetRepository implements DatasetRepository, AuditRepo
                      FROM responses r JOIN forms f ON f.id=r.form_id
                      JOIN questions q ON q.form_id=f.id
                      LEFT JOIN answers a ON a.response_id=r.id AND a.question_id=q.id
-                     WHERE f.study_id=? AND r.id=? AND q.id=?
+                     WHERE f.study_id=? AND r.in_dataset=1 AND r.id=? AND q.id=?
                      """)) {
             statement.setString(1, studyId.toString()); statement.setString(2, responseId.toString());
             statement.setString(3, questionId.toString());
@@ -108,38 +108,54 @@ public final class JdbcDatasetRepository implements DatasetRepository, AuditRepo
     @Override
     public void correct(CorrectionTarget target, Answer replacement, String reason) {
         transactions.inTransaction(connection -> {
-            var answerId = target.answerId() == null ? replacement.id() : target.answerId();
-            var oldJson = target.answerId() == null ? "null" : loadValueJson(connection, target.answerId());
-            if (target.answerId() == null) insertAnswer(connection, target.responseId(), replacement);
-            else updateAnswer(connection, target.answerId(), replacement);
-            var newJson = answerJson(replacement);
-            var now = Instant.now();
-            try (var correction = connection.prepareStatement("""
-                    INSERT INTO answer_corrections(id, study_id, response_id, question_id, answer_id,
-                        old_value_json, new_value_json, reason, actor, corrected_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'local-researcher', ?)
-                    """)) {
-                correction.setString(1, UUID.randomUUID().toString());
-                correction.setString(2, target.studyId().toString());
-                correction.setString(3, target.responseId().toString());
-                correction.setString(4, target.questionId().toString());
-                correction.setString(5, answerId.toString());
-                correction.setString(6, oldJson); correction.setString(7, newJson);
-                correction.setString(8, reason); correction.setString(9, now.toString());
-                correction.executeUpdate();
-            }
-            try (var audit = connection.prepareStatement("""
-                    INSERT INTO audit_logs(id, study_id, event_type, entity_type, entity_id, actor, occurred_at, details_json)
-                    VALUES (?, ?, 'ANSWER_CORRECTED', 'ANSWER', ?, 'local-researcher', ?, ?)
-                    """)) {
-                audit.setString(1, UUID.randomUUID().toString()); audit.setString(2, target.studyId().toString());
-                audit.setString(3, answerId.toString()); audit.setString(4, now.toString());
-                audit.setString(5, "{\"responseId\":\"" + target.responseId() + "\",\"questionId\":\""
-                        + target.questionId() + "\",\"reason\":\"" + escape(reason) + "\"}");
-                audit.executeUpdate();
-            }
+            correct(connection, target, replacement, reason);
             return null;
         });
+    }
+
+    /** Participates in the caller's transaction without opening or committing another connection. */
+    static void correct(Connection connection, CorrectionTarget target, Answer replacement, String reason) throws SQLException {
+        JdbcStudyRepository.requireWritable(connection, target.studyId());
+        try (var check = connection.prepareStatement("""
+                SELECT 1 FROM responses r JOIN forms f ON f.id=r.form_id JOIN questions q ON q.form_id=f.id
+                WHERE r.id=? AND q.id=? AND f.study_id=? AND r.in_dataset=1
+                """)) {
+            check.setString(1, target.responseId().toString()); check.setString(2, target.questionId().toString());
+            check.setString(3, target.studyId().toString());
+            try (var rows = check.executeQuery()) {
+                if (!rows.next()) throw new IllegalArgumentException("The correction target is not in the live dataset.");
+            }
+        }
+        var answerId = target.answerId() == null ? replacement.id() : target.answerId();
+        var oldJson = target.answerId() == null ? "null" : loadValueJson(connection, target.answerId());
+        if (target.answerId() == null) insertAnswer(connection, target.responseId(), replacement);
+        else updateAnswer(connection, target.answerId(), replacement);
+        var newJson = answerJson(replacement);
+        var now = Instant.now();
+        try (var correction = connection.prepareStatement("""
+                INSERT INTO answer_corrections(id, study_id, response_id, question_id, answer_id,
+                    old_value_json, new_value_json, reason, actor, corrected_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'local-researcher', ?)
+                """)) {
+            correction.setString(1, UUID.randomUUID().toString());
+            correction.setString(2, target.studyId().toString());
+            correction.setString(3, target.responseId().toString());
+            correction.setString(4, target.questionId().toString());
+            correction.setString(5, answerId.toString());
+            correction.setString(6, oldJson); correction.setString(7, newJson);
+            correction.setString(8, reason); correction.setString(9, now.toString());
+            correction.executeUpdate();
+        }
+        try (var audit = connection.prepareStatement("""
+                INSERT INTO audit_logs(id, study_id, event_type, entity_type, entity_id, actor, occurred_at, details_json)
+                VALUES (?, ?, 'ANSWER_CORRECTED', 'ANSWER', ?, 'local-researcher', ?, ?)
+                """)) {
+            audit.setString(1, UUID.randomUUID().toString()); audit.setString(2, target.studyId().toString());
+            audit.setString(3, answerId.toString()); audit.setString(4, now.toString());
+            audit.setString(5, "{\"responseId\":\"" + target.responseId() + "\",\"questionId\":\""
+                    + target.questionId() + "\",\"reason\":\"" + escape(reason) + "\"}");
+            audit.executeUpdate();
+        }
     }
 
     @Override
@@ -163,25 +179,47 @@ public final class JdbcDatasetRepository implements DatasetRepository, AuditRepo
         }
     }
 
+    @Override
+    public void recordEvent(UUID studyId, String eventType, String entityType, UUID entityId, String detailsJson) {
+        transactions.inTransaction(connection -> {
+            JdbcStudyRepository.requireWritable(connection, studyId);
+            try (var statement = connection.prepareStatement("""
+                     INSERT INTO audit_logs(id, study_id, event_type, entity_type, entity_id, actor, occurred_at, details_json)
+                     VALUES (?, ?, ?, ?, ?, 'local-researcher', ?, ?)
+                     """)) {
+                statement.setString(1, UUID.randomUUID().toString());
+                statement.setString(2, studyId.toString());
+                statement.setString(3, eventType);
+                statement.setString(4, entityType);
+                statement.setString(5, entityId == null ? null : entityId.toString());
+                statement.setString(6, Instant.now().toString());
+                statement.setString(7, detailsJson);
+                statement.executeUpdate();
+            }
+            return null;
+        });
+    }
+
+
     private static String buildWhere(UUID studyId, DatasetQuery query, List<Object> params) {
-        var sql = new StringBuilder(" WHERE f.study_id=?"); params.add(studyId);
+        var sql = new StringBuilder(" WHERE f.study_id=? AND r.in_dataset=1"); params.add(studyId);
         if (query.formId() != null) { sql.append(" AND f.id=?"); params.add(query.formId()); }
         if (!query.search().isBlank()) {
             var pattern = "%" + query.search().toLowerCase() + "%";
             sql.append(" AND (lower(f.title) LIKE ? OR lower(r.id) LIKE ? OR EXISTS (SELECT 1 FROM answers sa ")
-                    .append("WHERE sa.response_id=r.id AND lower(COALESCE(sa.value_text, CAST(sa.value_number AS TEXT), ")
+                    .append("WHERE sa.is_present=1 AND sa.response_id=r.id AND lower(COALESCE(sa.value_text, CAST(sa.value_number AS TEXT), ")
                     .append("CASE sa.value_boolean WHEN 1 THEN 'yes' WHEN 0 THEN 'no' END, sa.value_date, '')) LIKE ?))");
             params.add(pattern); params.add(pattern); params.add(pattern);
         }
         if (query.filterQuestionId() != null && query.filterOperator() != null) {
             if (query.filterOperator() == DatasetFilterOperator.IS_MISSING) {
                 sql.append(" AND r.form_id=(SELECT form_id FROM questions WHERE id=?)")
-                        .append(" AND NOT EXISTS (SELECT 1 FROM answers fa WHERE fa.response_id=r.id AND fa.question_id=? ")
+                        .append(" AND NOT EXISTS (SELECT 1 FROM answers fa WHERE fa.is_present=1 AND fa.response_id=r.id AND fa.question_id=? ")
                         .append("AND (fa.value_text IS NOT NULL OR fa.value_number IS NOT NULL OR fa.value_boolean IS NOT NULL OR fa.value_date IS NOT NULL))");
                 params.add(query.filterQuestionId()); params.add(query.filterQuestionId());
             } else {
                 sql.append(" AND EXISTS (SELECT 1 FROM answers fa JOIN questions fq ON fq.id=fa.question_id ")
-                        .append("WHERE fa.response_id=r.id AND fa.question_id=? AND ");
+                        .append("WHERE fa.is_present=1 AND fa.response_id=r.id AND fa.question_id=? AND ");
                 params.add(query.filterQuestionId());
                 switch (query.filterOperator()) {
                     case CONTAINS -> {
@@ -214,7 +252,7 @@ public final class JdbcDatasetRepository implements DatasetRepository, AuditRepo
             case VARIABLE_ASC, VARIABLE_DESC -> {
                 if (query.sortQuestionId() == null) yield " ORDER BY r.submitted_at DESC";
                 params.add(query.sortQuestionId());
-                yield " ORDER BY (SELECT COALESCE(va.value_text, CAST(va.value_number AS TEXT), CAST(va.value_boolean AS TEXT), va.value_date) FROM answers va WHERE va.response_id=r.id AND va.question_id=?) "
+                yield " ORDER BY (SELECT COALESCE(va.value_text, CAST(va.value_number AS TEXT), CAST(va.value_boolean AS TEXT), va.value_date) FROM answers va WHERE va.is_present=1 AND va.response_id=r.id AND va.question_id=?) "
                         + (query.sort() == DatasetSort.VARIABLE_ASC ? "ASC" : "DESC");
             }
         };
@@ -263,7 +301,7 @@ public final class JdbcDatasetRepository implements DatasetRepository, AuditRepo
         var cells = new LinkedHashMap<UUID, DatasetCell>();
         try (var statement = connection.prepareStatement("""
                 SELECT a.id, a.question_id, a.value_text, a.value_number, a.value_boolean, a.value_date, q.question_type
-                FROM answers a JOIN questions q ON q.id=a.question_id WHERE a.response_id=?
+                FROM answers a JOIN questions q ON q.id=a.question_id WHERE a.is_present=1 AND a.response_id=?
                 """)) {
             statement.setString(1, responseId.toString());
             try (var answers = statement.executeQuery()) {
@@ -302,7 +340,7 @@ public final class JdbcDatasetRepository implements DatasetRepository, AuditRepo
 
     private static void updateAnswer(Connection connection, UUID answerId, Answer answer) throws SQLException {
         try (var statement = connection.prepareStatement("""
-                UPDATE answers SET value_text=?, value_number=?, value_boolean=?, value_date=?, updated_at=? WHERE id=?
+                UPDATE answers SET is_present=1, value_text=?, value_number=?, value_boolean=?, value_date=?, updated_at=? WHERE id=?
                 """)) {
             setAnswerValues(statement, 1, answer); statement.setString(5, answer.createdAt().toString());
             statement.setString(6, answerId.toString());
@@ -320,10 +358,11 @@ public final class JdbcDatasetRepository implements DatasetRepository, AuditRepo
     }
 
     private static String loadValueJson(Connection connection, UUID answerId) throws SQLException {
-        try (var statement = connection.prepareStatement("SELECT value_text, value_number, value_boolean, value_date FROM answers WHERE id=?")) {
+        try (var statement = connection.prepareStatement("SELECT value_text, value_number, value_boolean, value_date, is_present FROM answers WHERE id=?")) {
             statement.setString(1, answerId.toString());
             try (var row = statement.executeQuery()) {
                 if (!row.next()) throw new SQLException("Answer no longer exists.");
+                if (row.getInt("is_present") == 0) return "null";
                 var text = row.getString(1); if (text != null) return "{\"type\":\"text\",\"value\":\"" + escape(text) + "\"}";
                 if (row.getObject(2) != null) return "{\"type\":\"number\",\"value\":" + row.getDouble(2) + "}";
                 if (row.getObject(3) != null) return "{\"type\":\"boolean\",\"value\":" + (row.getInt(3) == 1) + "}";

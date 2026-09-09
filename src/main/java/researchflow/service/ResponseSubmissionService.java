@@ -15,17 +15,20 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class ResponseSubmissionService {
+    private final StudyWriteGuard writeGuard;
     public static final String MULTI_VALUE_SEPARATOR = AnswerValueParser.MULTI_VALUE_SEPARATOR;
     private final FormRepository forms;
     private final ResponseRepository responses;
 
-    public ResponseSubmissionService(FormRepository forms, ResponseRepository responses) {
+    public ResponseSubmissionService(FormRepository forms, ResponseRepository responses, StudyWriteGuard writeGuard) {
+        this.writeGuard = java.util.Objects.requireNonNull(writeGuard);
         this.forms = forms;
         this.responses = responses;
     }
 
     public Response submit(UUID formId, Instant startedAt, Map<UUID, String> rawAnswers) {
         var form = forms.findById(formId).orElseThrow(() -> new IllegalArgumentException("Form not found: " + formId));
+        writeGuard.requireWritable(form.studyId());
         FormState.forStatus(form.status()).requireSubmission();
         var knownIds = form.questions().stream().map(Question::id).collect(java.util.stream.Collectors.toSet());
         if (rawAnswers.keySet().stream().anyMatch(id -> !knownIds.contains(id)))

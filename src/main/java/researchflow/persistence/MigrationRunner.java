@@ -8,8 +8,15 @@ import java.util.List;
 public final class MigrationRunner {
     private static final List<String> MIGRATIONS = List.of(
             "db/migration/V001__initial_schema.sql",
-            "db/migration/V002__dataset_audit_baseline.sql"
+            "db/migration/V002__dataset_audit_baseline.sql",
+            "db/migration/V003__quality_review_indexes.sql",
+            "db/migration/V004__finding_evidence_columns.sql",
+            "db/migration/V005__dataset_membership_and_finding_revisions.sql",
+            "db/migration/V006__historical_evidence_metadata.sql"
     );
+    public static List<String> supportedVersions() {
+        return MIGRATIONS.stream().map(name -> name.substring(name.lastIndexOf('/') + 1, name.indexOf("__"))).toList();
+    }
     private final ConnectionFactory connections;
 
     public MigrationRunner(ConnectionFactory connections) {

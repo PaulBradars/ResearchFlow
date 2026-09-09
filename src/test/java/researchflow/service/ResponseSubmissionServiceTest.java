@@ -25,7 +25,14 @@ class ResponseSubmissionServiceTest {
         var draft = form;
         var forms = new StubForms(form);
         var responses = new RejectingResponses();
-        var service = new ResponseSubmissionService(forms, responses);
+        var service = new ResponseSubmissionService(forms, responses, new StudyWriteGuard(new researchflow.persistence.StudyRepository() {
+            public Optional<researchflow.domain.Study> findById(UUID id) {
+                return Optional.of(researchflow.domain.Study.create("Test", "", "", "", null, null, List.of()));
+            }
+            public void save(researchflow.domain.Study study, String event) { throw new AssertionError(); }
+            public List<researchflow.domain.Study> findAll(boolean archived) { return List.of(); }
+            public researchflow.domain.StudyMetrics metrics(UUID id) { throw new AssertionError(); }
+        }));
         assertThrows(IllegalStateException.class,
                 () -> service.submit(draft.id(), Instant.now(), Map.of(question.id(), "Ada")));
 
@@ -45,5 +52,6 @@ class ResponseSubmissionServiceTest {
     private static final class RejectingResponses implements ResponseRepository {
         public void submit(Form form, researchflow.domain.Response response) { throw new AssertionError("must not persist"); }
         public List<researchflow.domain.ResponseSummary> findByStudy(UUID id) { return List.of(); }
+        public List<researchflow.domain.Response> findFullByStudy(UUID id) { return List.of(); }
     }
 }

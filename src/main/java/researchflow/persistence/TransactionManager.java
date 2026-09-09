@@ -15,6 +15,7 @@ public final class TransactionManager {
             connection.setAutoCommit(false);
             try {
                 var result = work.execute(connection);
+                if (Thread.currentThread().isInterrupted()) throw new java.util.concurrent.CancellationException("Cancelled before commit.");
                 connection.commit();
                 return result;
             } catch (Exception exception) {

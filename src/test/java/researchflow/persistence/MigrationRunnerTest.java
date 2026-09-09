@@ -29,9 +29,9 @@ class MigrationRunnerTest {
             var tables = names.stream().collect(Collectors.toSet());
             assertTrue(tables.containsAll(Set.of("studies", "research_questions", "forms", "questions",
                     "responses", "answers", "dataset_versions", "quality_issues", "analyses", "findings",
-                    "audit_logs", "chat_references", "answer_corrections")));
+                    "audit_logs", "chat_references", "answer_corrections", "version_response_snapshots", "finding_text_revisions")));
             try (var versions = connection.createStatement().executeQuery("SELECT COUNT(*) FROM schema_migrations")) {
-                versions.next(); assertEquals(2, versions.getInt(1));
+                versions.next(); assertEquals(6, versions.getInt(1));
             }
         }
     }

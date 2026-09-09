@@ -63,10 +63,11 @@ class ResponseSubmissionIntegrationTest {
     private Fixture fixture() {
         var connections = TestDatabase.migrated(temporaryDirectory);
         var transactions = new TransactionManager(connections);
+        var writeGuard = new researchflow.service.StudyWriteGuard(new JdbcStudyRepository(connections, transactions));
         var study = new StudyService(new JdbcStudyRepository(connections, transactions))
                 .create("Study", "", "", "", null, null, List.of());
         var formRepository = new JdbcFormRepository(connections, transactions);
-        var forms = new FormService(formRepository);
+        var forms = new FormService(formRepository, writeGuard);
         var form = forms.create(study.id(), "Intake", "");
         var number = Question.create("age", "Age", "", QuestionType.NUMBER, true, 18d, 100d, List.of());
         var choice = Question.create("consent", "Consent", "", QuestionType.SINGLE_CHOICE, true, null, null,
@@ -76,7 +77,7 @@ class ResponseSubmissionIntegrationTest {
         form = forms.activate(form.id());
         var responseRepository = new JdbcResponseRepository(connections, transactions);
         return new Fixture(connections, form.id(), number, choice, forms,
-                new ResponseSubmissionService(formRepository, responseRepository));
+                new ResponseSubmissionService(formRepository, responseRepository, writeGuard));
     }
 
     private static int count(java.sql.Connection connection, String table, String value, String column) throws Exception {

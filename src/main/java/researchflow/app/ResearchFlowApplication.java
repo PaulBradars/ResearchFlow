@@ -26,7 +26,11 @@ public final class ResearchFlowApplication extends Application {
 
     @Override
     public void start(Stage stage) {
-        var config = AppConfig.load();
+        final AppConfig config;
+        try { config = AppConfig.load(); }
+        catch (IllegalArgumentException invalid) {
+            showStartupFailure(stage, invalid.getMessage()); stage.show(); return;
+        }
         Logging.configure(config.logDirectory());
         Thread.setDefaultUncaughtExceptionHandler((thread, failure) ->
                 LOG.log(Level.SEVERE, "UNCAUGHT_UI_FAILURE [" + failure.getClass().getSimpleName() + "]"));
@@ -43,7 +47,7 @@ public final class ResearchFlowApplication extends Application {
                 Platform.runLater(() -> showApplication(stage, services));
             } catch (Throwable failure) {
                 LOG.log(Level.SEVERE, "APPLICATION_STARTUP_FAILED [" + failure.getClass().getSimpleName() + "]");
-                Platform.runLater(() -> showStartupFailure(stage));
+                Platform.runLater(() -> showStartupFailure(stage, "Check that the data directory is writable, then review the local log file."));
             }
         });
     }
@@ -62,10 +66,11 @@ public final class ResearchFlowApplication extends Application {
         return new Scene(content, 960, 640);
     }
 
-    private static void showStartupFailure(Stage stage) {
+    private static void showStartupFailure(Stage stage, String detail) {
         var title = new Label("ResearchFlow AI could not start");
         title.getStyleClass().add("page-title");
-        var message = new Label("Check that the data directory is writable, then review the local log file.");
+        var message = new Label(detail);
+        message.setWrapText(true);
         var content = new VBox(12, title, message);
         content.setAlignment(Pos.CENTER);
         var scene = new Scene(content, 960, 640);
