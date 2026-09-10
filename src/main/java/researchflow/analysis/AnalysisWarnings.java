@@ -5,7 +5,6 @@ import researchflow.domain.AnalysisMethod;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Deterministic limitation warnings — never suppressed, never computed by AI. */
 public final class AnalysisWarnings {
     private static final int SMALL_SAMPLE_THRESHOLD = 10;
     private static final double HEAVY_MISSINGNESS_THRESHOLD = 0.2;

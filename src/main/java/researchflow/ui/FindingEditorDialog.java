@@ -7,7 +7,6 @@ import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import researchflow.visualization.ChartSpec;
 
-/** Drafts a finding's text, with a chart preview when one could be derived from the evidence. */
 final class FindingEditorDialog {
     private FindingEditorDialog() { }
 

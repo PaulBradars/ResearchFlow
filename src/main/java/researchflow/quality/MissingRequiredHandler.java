@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** Flags a response missing a value for one of its form's required questions. */
 public final class MissingRequiredHandler extends QualityHandler {
     @Override
     protected List<QualityIssue> evaluate(QualityScanContext context) {

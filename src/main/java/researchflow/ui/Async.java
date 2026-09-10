@@ -30,6 +30,13 @@ public final class Async implements AutoCloseable {
         if (disposed) throw new IllegalStateException("View is disposed.");
         var handle = new TaskHandle();
         var existing = pending.putIfAbsent(key, handle);
+        // A per-action Cancel may be followed immediately by Retry while the old worker unwinds.
+        // Replace only cancelled handles; their callbacks remain suppressed and compare-and-remove
+        // cleanup cannot remove this new request.
+        while (existing != null && existing.cancelled()) {
+            pending.remove(key, existing);
+            existing = pending.putIfAbsent(key, handle);
+        }
         if (existing != null) return existing;
         handle.future = new FutureTask<Void>(() -> {
             handle.started.set(true);

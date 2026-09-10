@@ -6,7 +6,6 @@ import researchflow.domain.AnalysisResult;
 
 import java.util.ArrayList;
 
-/** Pearson correlation coefficient over pairwise-complete NUMBER values for two variables. */
 public final class CorrelationStrategy implements AnalysisStrategy {
     @Override
     public AnalysisMethod method() {

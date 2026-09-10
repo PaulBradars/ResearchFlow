@@ -54,4 +54,5 @@ class ResponseSubmissionServiceTest {
         public List<researchflow.domain.ResponseSummary> findByStudy(UUID id) { return List.of(); }
         public List<researchflow.domain.Response> findFullByStudy(UUID id) { return List.of(); }
     }
+
 }

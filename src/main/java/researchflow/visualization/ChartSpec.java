@@ -2,11 +2,6 @@ package researchflow.visualization;
 
 import java.util.List;
 
-/**
- * A chart built directly from already-computed, structured {@code AnalysisResult} data — never
- * from raw AI prose. Every variant is a flat list of primitives, so it round-trips through a small
- * self-contained JSON form (stored on a {@code Finding}) without needing a general JSON parser.
- */
 public sealed interface ChartSpec permits ChartSpec.Bar, ChartSpec.Histogram, ChartSpec.Scatter {
     String title();
 

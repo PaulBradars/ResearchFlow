@@ -14,11 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** Groups raw version-snapshot rows into per-response answer maps, then applies structured filters. */
 public final class AnalysisData {
     private AnalysisData() { }
 
-    /** Excludes any response that was EXCLUDED at snapshot time. Missing answers are simply absent keys. */
     public static List<Map<UUID, Answer>> group(List<VersionAnswer> raw) {
         var excludedResponses = new HashSet<UUID>();
         for (var row : raw) if (row.excluded()) excludedResponses.add(row.responseId());

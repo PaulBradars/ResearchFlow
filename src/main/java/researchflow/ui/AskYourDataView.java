@@ -36,6 +36,7 @@ public final class AskYourDataView {
     private final Label status = new Label();
     private final Label progress = new Label();
     private final Button ask = new Button("Ask");
+    private final BusyState askBusy = new BusyState();
     private final Button clear = new Button("Clear chat");
     private final Button save = new Button("Save chat history");
     private boolean busy;
@@ -80,7 +81,8 @@ public final class AskYourDataView {
 
         var hint = new Label("Chat naturally, ask for help, or analyze your data. History is saved automatically; export a copy below.");
         hint.setWrapText(true);
-        root.getChildren().addAll(eyebrow, title, hint, bar, new HBox(8, clear, save), status, progress, scroll);
+        root.getChildren().addAll(eyebrow, title, hint, bar, new HBox(8, clear, save), status,
+                new HBox(8, progress, askBusy.node()), scroll);
         VBox.setVgrow(scroll, Priority.ALWAYS);
         checkAvailability();
         refresh();
@@ -163,7 +165,8 @@ public final class AskYourDataView {
         setBusy(true);
         progress.setText("Thinking… a local model can take up to a minute, especially on the first "
                 + "request while it loads.");
-        async.run(() -> facade.ask(study.id(), text), answer -> {
+        var task = async.run(() -> facade.ask(study.id(), text), answer -> {
+            askBusy.finish();
             progress.setText("");
             question.clear();
             setBusy(false);
@@ -175,11 +178,16 @@ public final class AskYourDataView {
                         analysisService, findingService, async, errors));
             }
         }, failure -> {
+            askBusy.finish();
             progress.setText("");
             setBusy(false);
             if (failure instanceof ValidationException issue) status.setText(String.join(" ", issue.errors().values()));
             else if (failure instanceof LlmException llmFailure) status.setText(describe(llmFailure));
             else errors.accept(failure);
+        });
+        askBusy.start(task, () -> {
+            setBusy(false);
+            progress.setText("Request cancelled. Check saved chat and Analysis History for work completed before cancellation.");
         });
     }
 

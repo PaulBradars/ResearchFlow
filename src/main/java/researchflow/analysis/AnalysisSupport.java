@@ -2,7 +2,6 @@ package researchflow.analysis;
 
 import researchflow.domain.Answer;
 
-/** A privacy-neutral display rendering of a typed Answer, shared by filters and strategies. */
 final class AnalysisSupport {
     private AnalysisSupport() { }
 

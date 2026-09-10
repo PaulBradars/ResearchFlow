@@ -11,11 +11,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Flags numeric values outside Tukey's 1.5x-IQR fences, computed per question across the
- * Study's current responses. A question needs at least {@value #MINIMUM_SAMPLE} numeric values
- * before an outlier can be meaningfully identified.
- */
 public final class OutlierHandler extends QualityHandler {
     private static final int MINIMUM_SAMPLE = 4;
 

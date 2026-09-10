@@ -34,6 +34,12 @@ class SeederQualityScanTest {
         new Seeder(studyService, forms, submissions).seedIfEmpty();
 
         var study = studyService.list(true).getFirst();
+        org.junit.jupiter.api.Assertions.assertEquals(150, responseRepository.findFullByStudy(study.id()).size());
+        assertTrue(forms.list(study.id()).getFirst().questions().stream()
+                .anyMatch(question -> question.variableKey().equals("screen_time_hours")));
+        new Seeder(studyService, forms, submissions).seedIfEmpty();
+        org.junit.jupiter.api.Assertions.assertEquals(150, responseRepository.findFullByStudy(study.id()).size(),
+                "Restarting must not duplicate the expanded demo data");
         var quality = new QualityService(formRepository, responseRepository, new JdbcQualityRepository(connections, transactions), writeGuard);
         var issues = quality.scan(study.id());
 

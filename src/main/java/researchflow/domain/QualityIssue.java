@@ -3,10 +3,6 @@ package researchflow.domain;
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * A reviewable, deterministically detected data-quality problem. Detection never changes data;
- * researcher review actions change status, and rescans resolve conditions no longer present.
- */
 public record QualityIssue(UUID id, UUID studyId, UUID datasetVersionId, QualityIssueType type,
                            QualitySeverity severity, QualityIssueStatus status, UUID responseId,
                            UUID questionId, String explanation, String resolutionNote,
@@ -18,7 +14,6 @@ public record QualityIssue(UUID id, UUID studyId, UUID datasetVersionId, Quality
                 QualityIssueStatus.OPEN, responseId, questionId, explanation, null, Instant.now(), null);
     }
 
-    /** A stable key used to avoid re-reporting a still-active issue on every scan. */
     public String fingerprint() {
         return type.name() + '|' + responseId + '|' + questionId;
     }

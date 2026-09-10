@@ -3,11 +3,6 @@ package researchflow.visualization;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Renders a {@link ChartSpec} as a small, self-contained inline SVG — no external library, no
- * image encoding, portable in any browser. Used only for the HTML report export; the JavaFX UI
- * renders the same {@link ChartSpec} with native chart controls instead (see {@code ui.ChartView}).
- */
 public final class SvgChartRenderer {
     private static final int WIDTH = 480;
     private static final int HEIGHT = 260;

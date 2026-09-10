@@ -14,11 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Exercises {@link LocalLlmClient} against a tiny in-JVM HTTP stub standing in for Ollama — never a
- * real local runtime, consistent with the rest of the standard test suite. Covers the model
- * auto-detection/validation this class is responsible for, plus its response/error mapping.
- */
 class LocalLlmClientTest {
     private HttpServer server;
 
@@ -124,7 +119,6 @@ class LocalLlmClientTest {
         return server;
     }
 
-    /** Turns a simple {@code ["name1","name2"]} literal into Ollama's real {@code [{"name":"name1"}, ...]} shape. */
     private static String toModelObjects(String namesJsonArray) {
         var inner = namesJsonArray.strip();
         inner = inner.substring(1, inner.length() - 1).strip();

@@ -88,9 +88,9 @@ class AnalysisStrategiesTest {
         assertEquals(List.of("Evening", "Morning"), result.rowLabels());
         assertEquals(List.of("No", "Yes"), result.columnLabels());
         assertEquals(3, result.totalCount());
-        assertEquals(1, result.counts().get(0).get(1)); // Evening/Yes
-        assertEquals(1, result.counts().get(1).get(0)); // Morning/No
-        assertEquals(1, result.counts().get(1).get(1)); // Morning/Yes
+        assertEquals(1, result.counts().get(0).get(1));
+        assertEquals(1, result.counts().get(1).get(0));
+        assertEquals(1, result.counts().get(1).get(1));
     }
 
     @Test

@@ -13,7 +13,6 @@ import researchflow.visualization.ChartBuilder;
 
 import java.util.function.Consumer;
 
-/** The shared "derive a chart, then create a finding" action, used by both the manual Run tab and Ask Your Data. */
 final class EvidenceActions {
     private EvidenceActions() { }
 

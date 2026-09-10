@@ -2,8 +2,6 @@ package researchflow.dataimport;
 
 import java.util.Set;
 
-/** Turns a CSV header into a unique variable key matching {@code FormValidator}'s syntax: a letter
- * followed by up to 63 letters, digits, or underscores. */
 final class VariableKeys {
     private static final int MAX_LENGTH = 64;
 

@@ -7,10 +7,6 @@ import researchflow.domain.QualitySeverity;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Flags a response submitted faster than a plausible minimum for its form's question count.
- * The threshold is deterministic and form-relative rather than a single global constant.
- */
 public final class FastSubmissionHandler extends QualityHandler {
     private static final int SECONDS_PER_QUESTION = 2;
     private static final int MINIMUM_FLOOR_SECONDS = 5;

@@ -10,7 +10,6 @@ import researchflow.visualization.ChartSpec;
 
 import java.util.List;
 
-/** Renders a {@link ChartSpec} with native JavaFX chart controls, for in-app display. */
 final class ChartView {
     private ChartView() { }
 

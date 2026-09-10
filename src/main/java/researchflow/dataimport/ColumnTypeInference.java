@@ -6,8 +6,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
-/** Infers a column's question type from its non-blank sample values. Deliberately conservative: NUMBER or DATE
- * only when every non-blank value parses cleanly, otherwise SHORT_TEXT. No choice/option inference in this MVP. */
 final class ColumnTypeInference {
     private ColumnTypeInference() { }
 

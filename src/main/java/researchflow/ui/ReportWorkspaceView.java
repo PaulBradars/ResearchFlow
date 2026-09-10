@@ -21,6 +21,7 @@ public final class ReportWorkspaceView {
     private final VBox root = new VBox(16);
     private final VBox preview = new VBox(10);
     private final Button exportButton = new Button("Export HTML…");
+    private final BusyState exportBusy = new BusyState();
     private final Study study;
     private final ReportService service;
     private final Async async;
@@ -48,7 +49,7 @@ public final class ReportWorkspaceView {
         refresh.setOnAction(event -> refreshPreview());
         exportButton.setDisable(true);
         exportButton.setOnAction(event -> export());
-        var toolbar = new javafx.scene.layout.HBox(8, refresh, exportButton);
+        var toolbar = new javafx.scene.layout.HBox(8, refresh, exportButton, exportBusy.node());
 
         preview.getChildren().setAll(new Label("Select Preview to compose the report."));
         var scroll = new ScrollPane(preview);
@@ -122,15 +123,23 @@ public final class ReportWorkspaceView {
         var file = chooser.showSaveDialog(window);
         if (file == null) return;
         exportButton.setDisable(true);
-        async.run(() -> service.exportDetailed(study.id(), file.toPath()), result -> {
+        var task = async.run(() -> service.exportDetailed(study.id(), file.toPath()), result -> {
+            exportBusy.finish();
             exportButton.setDisable(false);
             var alert = new Alert(result.auditRecorded() ? Alert.AlertType.INFORMATION : Alert.AlertType.WARNING,
                     "Report exported to " + result.path() + "\nSHA-256: " + result.sha256() + "\n" + result.warning(), ButtonType.OK);
             alert.setHeaderText(result.auditRecorded() ? "Export complete" : "File saved; audit incomplete");
             alert.showAndWait();
         }, failure -> {
+            exportBusy.finish();
             exportButton.setDisable(false);
             errors.accept(failure);
+        });
+        exportBusy.start(task, () -> {
+            exportButton.setDisable(false);
+            var notice = new Alert(Alert.AlertType.INFORMATION,
+                    "Export cancelled. A file published before cancellation remains at the selected destination.", ButtonType.OK);
+            notice.setHeaderText("Export cancellation requested"); notice.showAndWait();
         });
     }
 

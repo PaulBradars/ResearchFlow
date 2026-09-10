@@ -7,11 +7,6 @@ import javafx.scene.layout.VBox;
 import researchflow.domain.AnalysisResult;
 import researchflow.domain.EvidenceBundle;
 
-/**
- * Read-only rendering of a computed {@link EvidenceBundle} — the method, variables, sample size,
- * warnings, and the typed result. Shared by the manual analysis panel and Ask Your Data, so both
- * present evidence identically.
- */
 final class EvidenceView {
     private EvidenceView() { }
 

@@ -1,6 +1,5 @@
 package researchflow.quality;
 
-/** Assembles the core deterministic quality-handler chain in a fixed, documented order. */
 public final class QualityHandlerChain {
     private QualityHandlerChain() { }
 

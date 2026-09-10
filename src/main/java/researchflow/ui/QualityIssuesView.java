@@ -41,6 +41,7 @@ public final class QualityIssuesView {
     private final TableView<QualityIssue> table = new TableView<>();
     private final ComboBox<QualityIssueStatus> statusFilter = new ComboBox<>();
     private final Label status = new Label();
+    private final BusyState scanBusy = new BusyState();
     private final ComboBox<researchflow.domain.QualityIssueType> typeFilter = new ComboBox<>();
     private final ComboBox<researchflow.domain.QualitySeverity> severityFilter = new ComboBox<>();
     private final javafx.scene.control.TextField searchFilter = new javafx.scene.control.TextField();
@@ -153,7 +154,7 @@ public final class QualityIssuesView {
 
         var detailsScroll = new javafx.scene.control.ScrollPane(selectionDetails);
         detailsScroll.setFitToWidth(true); detailsScroll.setPrefHeight(168); detailsScroll.setMinHeight(110);
-        root.getChildren().addAll(eyebrow, title, toolbar, filters, instructions, table, detailsScroll, actions);
+        root.getChildren().addAll(eyebrow, title, toolbar, scanBusy.node(), filters, instructions, table, detailsScroll, actions);
         table.setMinHeight(140);
         VBox.setVgrow(table, javafx.scene.layout.Priority.ALWAYS);
         refresh();
@@ -191,13 +192,21 @@ public final class QualityIssuesView {
     }
 
     private void scan() {
-        root.setDisable(true);
-        async.run(() -> quality.scan(study.id()), issues -> {
-            root.setDisable(false);
+        setScanning(true);
+        var task = async.run(() -> quality.scan(study.id()), issues -> {
+            setScanning(false); scanBusy.finish();
             loadedIssues = List.copyOf(issues);
             filterIssues();
             status.setText("Scan complete. " + status.getText());
-        }, failure -> { root.setDisable(false); handle(failure); });
+        }, failure -> { setScanning(false); scanBusy.finish(); handle(failure); });
+        scanBusy.start(task, () -> {
+            setScanning(false);
+            status.setText("Scan cancelled. Refresh to see any changes saved before cancellation.");
+        });
+    }
+
+    private void setScanning(boolean value) {
+        for (var child : root.getChildren()) if (child != scanBusy.node()) child.setDisable(value);
     }
 
     private <T extends Enum<T>> void enumFilter(ComboBox<T> box, T[] values, String all) {

@@ -15,11 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Schema-aware plan validation: variable existence, type compatibility per method, and filter
- * validity — all checked against the authoritative Study Question metadata before any calculation
- * runs. An invalid plan never reaches an {@code AnalysisStrategy}.
- */
 public final class AnalysisPlanValidator {
     private static final Set<QuestionType> CATEGORICAL = EnumSet.of(QuestionType.SINGLE_CHOICE, QuestionType.YES_NO,
             QuestionType.LIKERT, QuestionType.RATING);

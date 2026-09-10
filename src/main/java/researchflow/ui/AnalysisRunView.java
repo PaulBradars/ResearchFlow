@@ -40,6 +40,8 @@ public final class AnalysisRunView {
     private final TextField filterValue = new TextField();
     private final ComboBox<DatasetVersion> version = new ComboBox<>();
     private final Label validation = new Label();
+    private final BusyState runBusy = new BusyState();
+    private final Button run = new Button("Run analysis");
     private final VBox evidence = new VBox(10);
     private final Study study;
     private final AnalysisService analysisService;
@@ -87,7 +89,6 @@ public final class AnalysisRunView {
             @Override public DatasetVersion fromString(String string) { return null; }
         });
 
-        var run = new Button("Run analysis");
         run.getStyleClass().add("primary-button");
         run.setOnAction(event -> run());
 
@@ -103,7 +104,7 @@ public final class AnalysisRunView {
         validation.getStyleClass().add("field-error");
         var evidenceTitle = new Label("Evidence");
         evidenceTitle.getStyleClass().add("section-title");
-        root.getChildren().addAll(eyebrow, title, form, run, validation, new Separator(), evidenceTitle, evidence);
+        root.getChildren().addAll(eyebrow, title, form, new HBox(10, run, runBusy.node()), validation, new Separator(), evidenceTitle, evidence);
 
         updateSecondaryAvailability(method.getValue());
         async.run(() -> datasets.query(study.id(), DatasetQuery.firstPage()), page -> {
@@ -145,9 +146,17 @@ public final class AnalysisRunView {
                 .secondaryVariable(secondary.getValue() == null ? null : secondary.getValue().questionId())
                 .filters(filters)
                 .datasetVersion(version.getValue() == null ? null : version.getValue().id()).build();
-        async.run(() -> analysisService.run(study.id(), plan), this::showEvidence, failure -> {
+        run.setDisable(true);
+        var task = async.run(() -> analysisService.run(study.id(), plan), result -> {
+            run.setDisable(false); runBusy.finish(); showEvidence(result);
+        }, failure -> {
+            run.setDisable(false); runBusy.finish();
             if (failure instanceof ValidationException issue) validation.setText(String.join(" ", issue.errors().values()));
             else errors.accept(failure);
+        });
+        runBusy.start(task, () -> {
+            run.setDisable(false);
+            validation.setText("Analysis cancelled. Check History for any result saved before cancellation.");
         });
     }
 

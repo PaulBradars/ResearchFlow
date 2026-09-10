@@ -30,7 +30,7 @@ public final class JdbcFormRepository implements FormRepository {
         transactions.inTransaction(connection -> {
             JdbcStudyRepository.requireWritable(connection, form.studyId());
             upsertForm(connection, form);
-            // Lifecycle-only changes must not delete/reinsert questions already referenced by answers.
+
             if ("FORM_CREATED".equals(auditEventType) || "FORM_UPDATED".equals(auditEventType)) {
                 replaceStructure(connection, form);
             }
@@ -88,6 +88,10 @@ public final class JdbcFormRepository implements FormRepository {
     }
 
     private static void replaceStructure(Connection connection, Form form) throws SQLException {
+        try (var delete = connection.prepareStatement("DELETE FROM questions WHERE form_id = ?")) {
+            delete.setString(1, form.id().toString());
+            delete.executeUpdate();
+        }
         try (var delete = connection.prepareStatement("DELETE FROM form_sections WHERE form_id = ?")) {
             delete.setString(1, form.id().toString());
             delete.executeUpdate();

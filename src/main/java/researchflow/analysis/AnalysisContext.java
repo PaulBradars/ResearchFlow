@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** What a strategy needs: the plan, authoritative Question metadata, and the filtered response data. */
 public final class AnalysisContext {
     private final AnalysisPlan plan;
     private final Map<UUID, Question> questionsById;

@@ -2,7 +2,6 @@ package researchflow.domain;
 
 import java.util.List;
 
-/** The typed, deterministic result of one {@link AnalysisMethod}. Never produced or altered by AI. */
 public sealed interface AnalysisResult permits AnalysisResult.Frequency, AnalysisResult.NumericSummary,
         AnalysisResult.Correlation, AnalysisResult.CrossTabulation, AnalysisResult.GroupComparison {
 

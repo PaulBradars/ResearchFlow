@@ -1,6 +1,5 @@
 package researchflow.ai;
 
-/** A no-op {@link LlmClient} used when the local AI runtime is disabled by configuration. */
 public final class DisabledLlmClient implements LlmClient {
     @Override
     public boolean isAvailable() {

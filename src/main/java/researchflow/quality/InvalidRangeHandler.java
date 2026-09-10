@@ -8,11 +8,6 @@ import researchflow.domain.QualitySeverity;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Flags a numeric answer outside its question's configured minimum/maximum. Normal submission
- * and correction already reject out-of-range values, so this exists to catch data that entered
- * the table through another path (imports, restored versions, configuration changes).
- */
 public final class InvalidRangeHandler extends QualityHandler {
     @Override
     protected List<QualityIssue> evaluate(QualityScanContext context) {

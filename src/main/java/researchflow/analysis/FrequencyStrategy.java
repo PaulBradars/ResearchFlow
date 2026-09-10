@@ -8,7 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Counts and percentages of each distinct value for one variable. Multiple-choice contributes to every selected value. */
 public final class FrequencyStrategy implements AnalysisStrategy {
     @Override
     public AnalysisMethod method() {
