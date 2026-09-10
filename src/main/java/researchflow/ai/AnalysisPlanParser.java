@@ -47,7 +47,7 @@ public final class AnalysisPlanParser {
         var primary = requireVariable(json, "primaryVariableId", questions, true);
         var secondary = requireVariable(json, "secondaryVariableId", questions, false);
         var filters = parseFilters(json, questions);
-        return new AnalysisPlan(method, primary, secondary, filters, null);
+        return AnalysisPlan.builder(method, primary).secondaryVariable(secondary).filters(filters).build();
     }
 
     private static UUID requireVariable(String json, String key, Map<UUID, Question> questions, boolean required) {

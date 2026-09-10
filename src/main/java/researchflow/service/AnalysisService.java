@@ -36,13 +36,20 @@ public final class AnalysisService {
     private final FormRepository forms;
     private final VersionRepository versions;
     private final AnalysisRepository analyses;
-    private final Map<AnalysisMethod, AnalysisStrategy> strategies = AnalysisStrategyRegistry.buildDefault();
+    private final Map<AnalysisMethod, AnalysisStrategy> strategies;
 
     public AnalysisService(FormRepository forms, VersionRepository versions, AnalysisRepository analyses, StudyWriteGuard writeGuard) {
+        this(forms, versions, analyses, writeGuard, AnalysisStrategyRegistry.buildDefault().values());
+    }
+
+    /** Strategies are replaceable at composition time; every implementation still passes through the same guards. */
+    public AnalysisService(FormRepository forms, VersionRepository versions, AnalysisRepository analyses,
+                           StudyWriteGuard writeGuard, java.util.Collection<? extends AnalysisStrategy> strategies) {
         this.writeGuard = java.util.Objects.requireNonNull(writeGuard);
         this.forms = forms;
         this.versions = versions;
         this.analyses = analyses;
+        this.strategies = AnalysisStrategyRegistry.register(strategies);
     }
 
     public void requireWritableStudy(UUID studyId) { writeGuard.requireWritable(studyId); }

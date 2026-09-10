@@ -13,9 +13,6 @@ import researchflow.persistence.JdbcFindingRepository;
 import researchflow.persistence.MigrationRunner;
 import researchflow.persistence.Seeder;
 import researchflow.persistence.TransactionManager;
-import researchflow.ai.DisabledLlmClient;
-import researchflow.ai.LlmClient;
-import researchflow.ai.LocalLlmClient;
 import researchflow.service.StudyService;
 import researchflow.service.FormService;
 import researchflow.service.ResponseQueryService;
@@ -32,7 +29,6 @@ import researchflow.service.DatasetImportService;
 import researchflow.service.FindingService;
 import researchflow.service.ReportService;
 
-import java.time.Duration;
 
 public final class AppServices {
     private researchflow.collection.CollectionServer collection;
@@ -122,9 +118,7 @@ public final class AppServices {
         var versions = new VersionService(versionRepository, writeGuard);
         var analysisRepository = new JdbcAnalysisRepository(connections, transactions);
         var analysis = new AnalysisService(formRepository, versionRepository, analysisRepository, writeGuard);
-        LlmClient llmClient = config.aiEnabled()
-                ? new LocalLlmClient(config.aiBaseUrl(), config.aiModel(), Duration.ofSeconds(config.aiTimeoutSeconds()))
-                : new DisabledLlmClient();
+        var llmClient = LlmClientFactory.create(config);
         var chatRepository = new JdbcChatRepository(connections);
         var aiFacade = new AnalysisFacade(llmClient, formRepository, analysis, chatRepository);
         var imports = new DatasetImportService(forms, submissions);

@@ -13,6 +13,7 @@
 
 - [Setup and running instructions](../README.md) — install prerequisites, build, run, configure AI, troubleshoot
 - [Current implemented architecture](architecture/CURRENT_IMPLEMENTED_ARCHITECTURE.md)
+- [Design patterns: implementation and rationale](architecture/DESIGN_PATTERNS.md) — Builder, Simple Factory, Strategy, Facade, retained patterns, diagrams, and tests
 - [Development roadmap](planning/DEVELOPMENT_ROADMAP.md)
 - [Latest handoff — Phase 7](handoffs/PHASE_7_HANDOFF.md)
 

@@ -31,6 +31,7 @@ public final class AnalysisHistoryView {
     private final TableView<AnalysisSummary> table = new TableView<>();
     private final Study study;
     private final AnalysisService analysis;
+    private final researchflow.service.AnalysisPresentationFacade presentation;
     private final researchflow.service.FindingService findings;
     private final Async async;
     private final Consumer<Throwable> errors;
@@ -38,6 +39,7 @@ public final class AnalysisHistoryView {
     public AnalysisHistoryView(Study study, AnalysisService analysis, researchflow.service.FindingService findings, Async async, Consumer<Throwable> errors) {
         this.study = study;
         this.analysis = analysis;
+        this.presentation = new researchflow.service.AnalysisPresentationFacade(analysis);
         this.findings = findings;
         this.async = async;
         this.errors = errors;
@@ -91,18 +93,14 @@ public final class AnalysisHistoryView {
 
     private void showDetails(AnalysisSummary summary) {
         if (summary == null) return;
-        async.run(() -> new Object[]{analysis.reopen(study.id(), summary.id()), analysis.provenance(study.id(), summary.id())}, loaded -> {
-            var historical = (researchflow.domain.HistoricalEvidence) loaded[0];
+        async.run(() -> presentation.load(study.id(), summary.id()), loaded -> {
+            var historical = loaded.historical();
             var content = new VBox(10);
-            var provenance = new Label((String) loaded[1]); provenance.setWrapText(true); content.getChildren().add(provenance);
+            var provenance = new Label(loaded.provenance()); provenance.setWrapText(true); content.getChildren().add(provenance);
             if (historical.supported()) {
                 content.getChildren().add(EvidenceView.render(historical.evidence()));
                 content.getChildren().add(EvidenceActions.createFindingButton(study, historical.evidence(), analysis, findings, async, errors));
-                async.run(() -> analysis.chartValues(study.id(), historical.evidence()), values -> {
-                    if (content.getScene() != null && content.getScene().getWindow().isShowing())
-                        researchflow.visualization.ChartBuilder.build(historical.evidence(), values.primary(), values.secondary())
-                                .ifPresent(chart -> content.getChildren().add(ChartView.render(chart)));
-                }, errors);
+                loaded.chart().ifPresent(chart -> content.getChildren().add(ChartView.render(chart)));
             } else {
                 var raw = new TextArea(historical.notice() + "\nPlan: " + historical.stored().planJson()
                         + "\nResult: " + historical.stored().resultJson()); raw.setEditable(false); content.getChildren().add(raw);

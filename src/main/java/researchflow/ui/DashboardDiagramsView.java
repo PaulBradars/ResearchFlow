@@ -6,16 +6,12 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 import researchflow.domain.AnalysisSummary;
-import researchflow.domain.HistoricalEvidence;
 import researchflow.domain.Study;
 import researchflow.service.AnalysisService;
-import researchflow.visualization.ChartBuilder;
-import researchflow.visualization.ChartSpec;
+import researchflow.service.AnalysisPresentationFacade;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 /** Dashboard chart browser, scoped to persisted analyses and their original dataset snapshots. */
@@ -29,11 +25,13 @@ public final class DashboardDiagramsView {
     private final Label status = new Label();
     private final Study study;
     private final AnalysisService analysis;
+    private final AnalysisPresentationFacade presentation;
     private final Async async;
 
     public DashboardDiagramsView(Study study, AnalysisService analysis, Async async, Runnable openAnalysis) {
         this.study = study;
         this.analysis = analysis;
+        this.presentation = new AnalysisPresentationFacade(analysis);
         this.async = async;
         root.setId("dashboard-diagrams");
         root.getStyleClass().add("content-panel");
@@ -98,19 +96,7 @@ public final class DashboardDiagramsView {
         busy(true);
         content.getChildren().clear();
         status.setText("Loading diagram…");
-        async.run(() -> {
-            var historical = analysis.reopen(study.id(), summary.id());
-            Optional<ChartSpec> chart = Optional.empty();
-            if (historical.supported()) {
-                var result = historical.evidence().result();
-                boolean needsValues = result instanceof researchflow.domain.AnalysisResult.NumericSummary
-                        || result instanceof researchflow.domain.AnalysisResult.Correlation;
-                var values = needsValues ? analysis.chartValues(study.id(), historical.evidence()) : null;
-                chart = ChartBuilder.build(historical.evidence(), values == null ? List.of() : values.primary(),
-                        values == null ? null : values.secondary());
-            }
-            return new Loaded(historical, chart, analysis.provenance(study.id(), summary.id()));
-        }, loaded -> {
+        async.run(() -> presentation.load(study.id(), summary.id()), loaded -> {
             busy(false);
             status.setText("Saved analysis · " + summary.source() + " · dataset v" + summary.versionNumber()
                     + " · sample size " + summary.sampleSize());
@@ -144,5 +130,4 @@ public final class DashboardDiagramsView {
     }
 
     private static Label label(String text) { var label = new Label(text); label.setWrapText(true); return label; }
-    private record Loaded(HistoricalEvidence historical, Optional<ChartSpec> chart, String provenance) { }
 }

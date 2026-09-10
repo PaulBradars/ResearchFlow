@@ -141,9 +141,10 @@ public final class AnalysisRunView {
         }
         var filters = filterVariable.getValue() == null || filterOperator.getValue() == null ? List.<AnalysisFilter>of()
                 : List.of(new AnalysisFilter(filterVariable.getValue().questionId(), filterOperator.getValue(), filterValue.getText()));
-        var plan = new AnalysisPlan(method.getValue(), primary.getValue().questionId(),
-                secondary.getValue() == null ? null : secondary.getValue().questionId(), filters,
-                version.getValue() == null ? null : version.getValue().id());
+        var plan = AnalysisPlan.builder(method.getValue(), primary.getValue().questionId())
+                .secondaryVariable(secondary.getValue() == null ? null : secondary.getValue().questionId())
+                .filters(filters)
+                .datasetVersion(version.getValue() == null ? null : version.getValue().id()).build();
         async.run(() -> analysisService.run(study.id(), plan), this::showEvidence, failure -> {
             if (failure instanceof ValidationException issue) validation.setText(String.join(" ", issue.errors().values()));
             else errors.accept(failure);

@@ -346,12 +346,20 @@ user-created databases are not populated.
 
 ## 13. Patterns actually implemented
 
-Repository, Service Layer, State, Transaction Manager, Dependency Injection/Composition Root, Error
-Boundary, immutable domain projections, Simple Factory (`AnalysisStrategyRegistry`), Chain of
-Responsibility (`QualityHandler`), Command (`ReviewCommand`, interpreted by `QualityReviewService`),
-Strategy (`AnalysisStrategy`, `ChartBuilder`'s per-method dispatch), Adapter
-(`LlmClient`/`LocalLlmClient`/`DisabledLlmClient`), and Facade (`AnalysisFacade` for AI,
-`ReportService` for report composition) are implemented.
+Creational patterns include Builder (`AnalysisPlan.Builder`) and Simple Factory
+(`LlmClientFactory`, plus the default strategy registry assembly). Behavioural patterns include
+Strategy (`AnalysisStrategy`, with injectable and validated registration), State (`FormState`),
+Chain of Responsibility (`QualityHandler`), and the existing quality review commands
+(`ReviewCommand`, interpreted by `QualityReviewService`). Structural patterns include Adapter
+(`LocalLlmClient` behind `LlmClient`) and Facade (`AnalysisFacade` for AI,
+`AnalysisPresentationFacade` for dashboard/history evidence and charts, and `ReportService`
+for report composition). `DisabledLlmClient` is a disabled / Null Object implementation;
+`ChartBuilder` uses static typed dispatch, not a separate Strategy interface.
+
+Repository, Service Layer, Transaction Manager, Dependency Injection/Composition Root, Error
+Boundary, and immutable domain projections also remain architectural idioms in use.
+See [Design patterns: implementation and rationale](DESIGN_PATTERNS.md) for the refactoring,
+class responsibilities, examples, diagrams, extension boundaries, and verification.
 
 ## 14. Verification baseline
 

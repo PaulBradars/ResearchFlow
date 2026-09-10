@@ -30,6 +30,51 @@ class JdbcAnalysisRepositoryTest {
     @TempDir Path temporaryDirectory;
 
     @Test
+    void injectedStrategyExecutesOnlyAfterTheSharedValidationPipeline() {
+        var fixture = fixture();
+        var connections = TestDatabase.migrated(temporaryDirectory);
+        var transactions = new TransactionManager(connections);
+        var calls = new java.util.concurrent.atomic.AtomicInteger();
+        var strategies = new java.util.ArrayList<>(researchflow.analysis.AnalysisStrategyRegistry.buildDefault().values());
+        strategies.removeIf(strategy -> strategy.method() == AnalysisMethod.NUMERIC_SUMMARY);
+        strategies.add(new researchflow.analysis.AnalysisStrategy() {
+            public AnalysisMethod method() { return AnalysisMethod.NUMERIC_SUMMARY; }
+            public AnalysisResult execute(researchflow.analysis.AnalysisContext context) {
+                calls.incrementAndGet();
+                return new researchflow.analysis.NumericSummaryStrategy().execute(context);
+            }
+        });
+        var service = new AnalysisService(new JdbcFormRepository(connections, transactions),
+                new JdbcVersionRepository(connections, transactions), new JdbcAnalysisRepository(connections, transactions),
+                new researchflow.service.StudyWriteGuard(new JdbcStudyRepository(connections, transactions)), strategies);
+        var evidence = service.run(fixture.studyId(), AnalysisPlan.builder(AnalysisMethod.NUMERIC_SUMMARY, fixture.sleep().id()).build());
+        assertEquals(1, calls.get());
+        assertEquals(6.5, ((AnalysisResult.NumericSummary) evidence.result()).mean(), 1e-9);
+        org.junit.jupiter.api.Assertions.assertThrows(researchflow.service.ValidationException.class,
+                () -> service.run(fixture.studyId(), AnalysisPlan.builder(AnalysisMethod.NUMERIC_SUMMARY, fixture.studyTime().id()).build()));
+        assertEquals(1, calls.get());
+    }
+
+    @Test
+    void presentationFacadeLoadsSavedChartAndRejectsAnotherStudy() {
+        var fixture = fixture();
+        var evidence = fixture.analysis().run(fixture.studyId(),
+                AnalysisPlan.builder(AnalysisMethod.NUMERIC_SUMMARY, fixture.sleep().id()).build());
+        fixture.corrections().correct(fixture.studyId(), fixture.responseIds().getFirst(), fixture.sleep().id(),
+                "1", "Later live correction");
+        var facade = new researchflow.service.AnalysisPresentationFacade(fixture.analysis());
+        var presentation = facade.load(fixture.studyId(), evidence.id());
+        assertEquals(evidence.result(), presentation.historical().evidence().result());
+        var chart = org.junit.jupiter.api.Assertions.assertInstanceOf(researchflow.visualization.ChartSpec.Histogram.class,
+                presentation.chart().orElseThrow());
+        assertEquals(4, chart.binCounts().stream().mapToInt(Integer::intValue).sum());
+        assertTrue(chart.binLabels().getFirst().startsWith("5"));
+        assertTrue(presentation.provenance().contains(evidence.datasetVersionId().toString()));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> facade.load(UUID.randomUUID(), evidence.id()));
+    }
+
+    @Test
     void runsEachStrategyAgainstAResolvedVersionAndPersistsEvidence() throws Exception {
         var fixture = fixture();
 

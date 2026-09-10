@@ -10,6 +10,9 @@ This guide gets the project running on a fresh machine.
 For all features, button explanations, and a complete operating walkthrough, read the
 [ResearchFlow AI User Guide](docs/USER_GUIDE.md).
 
+For creational, behavioural, and structural patterns, implementation examples, and architecture diagrams,
+read the [design-pattern documentation](docs/architecture/DESIGN_PATTERNS.md).
+
 The [P2 reliability report](docs/P2_RELIABILITY_IMPLEMENTATION_REPORT.md) records the 132-test clean build.
 See [recovery and release instructions](docs/RECOVERY_AND_RELEASE.md) for verified database backups,
 partial-operation behavior, historical evidence, configuration checks, CI, and Windows runtime packaging.
