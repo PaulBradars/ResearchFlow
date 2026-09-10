@@ -40,13 +40,14 @@ public final class StudyDashboardView {
                 questions.getChildren().add(new Label((index + 1) + ". " + study.researchQuestions().get(index)));
             }
         }
-        root.getChildren().addAll(eyebrow, title, description, metrics, objectivesTitle, objectives,
-                questionsTitle, questions);
+        root.getChildren().addAll(Visuals.hero("STUDY OVERVIEW", study.title(), description.getText()), metrics,
+                Visuals.panel("Research objectives", objectives), Visuals.panel("Questions to explore", questions));
         async.run(() -> studies.metrics(study.id()), this::showMetrics, errors);
     }
 
     public Parent node() {
-        return root;
+        var scroll = new javafx.scene.control.ScrollPane(root); scroll.setFitToWidth(true);
+        return scroll;
     }
 
     private void showMetrics(StudyMetrics values) {
@@ -61,9 +62,9 @@ public final class StudyDashboardView {
         number.getStyleClass().add("metric-number");
         var caption = new Label(label);
         caption.getStyleClass().add("muted");
-        var card = new VBox(4, number, caption);
+        var card = new VBox(7, Visuals.icon(label.equals("Forms") ? "Form" : label.equals("Analyses") ? "Analysis" : label.equals("Open quality issues") ? "Quality / Versions" : label), number, caption);
         card.getStyleClass().add("metric-card");
-        card.setPrefWidth(180);
+        card.setPrefWidth(185);
         return card;
     }
 }

@@ -1,4 +1,4 @@
 package researchflow.domain;
 
-/** The result of one "Ask Your Data" turn: the computed, persisted evidence plus its plain-language explanation. */
+/** One chat reply, with optional computed evidence (null for ordinary conversation). */
 public record AiAnswer(EvidenceBundle evidence, String explanation) { }

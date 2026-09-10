@@ -6,6 +6,14 @@ import java.util.*;
 public final class Json {
     private final String input;
     private int index;
+    private boolean exactNumbers;
+    public static Object parseExact(String input) {
+        if (input == null || input.length() > 10_000_000) throw new IllegalArgumentException("Missing or oversized JSON.");
+        var reader = new Json(input); reader.exactNumbers = true;
+        var value = reader.value(0); reader.space();
+        if (reader.index != input.length()) throw reader.invalid();
+        return value;
+    }
     private Json(String input) { this.input = Objects.requireNonNull(input); }
     public static Object parse(String input) {
         if (input == null || input.length() > 10_000_000) throw new IllegalArgumentException("Missing or oversized JSON.");
@@ -42,6 +50,7 @@ public final class Json {
         match.region(index, input.length());
         if (!match.lookingAt()) throw invalid();
         index = match.end();
+        if (exactNumbers) return new java.math.BigDecimal(match.group());
         var number = Double.parseDouble(match.group());
         if (!Double.isFinite(number)) throw invalid();
         return number;

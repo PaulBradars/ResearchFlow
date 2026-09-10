@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Imports an external CSV file into this Study as a new Form and Responses. Reuses the existing
+ * Imports an external dataset file into this Study as a new Form and Responses. Reuses the existing
  * collection pipeline, so the result is immediately usable from Dataset, Quality, Versions, and
  * Analysis with no separate code path.
  */
@@ -46,6 +46,9 @@ public final class ImportWorkspaceView {
     private final Runnable onImported;
     private final Consumer<Throwable> errors;
     private final List<ColumnRow> columnRows = new ArrayList<>();
+    private final Button choose = new Button("Choose dataset file...");
+    private final ComboBox<String> worksheet = new ComboBox<>();
+    private boolean loadingSheets;
     private Path selectedFile;
     private ImportPreview preview;
     private researchflow.service.CancellationToken cancellation;
@@ -63,21 +66,26 @@ public final class ImportWorkspaceView {
         eyebrow.getStyleClass().add("eyebrow");
         var heading = new Label("Import a dataset");
         heading.getStyleClass().add("page-title");
-        var hint = new Label("Import an external CSV file as a new form and set of responses, ready for the "
+        var hint = new Label("Import CSV, TSV, JSON, or Excel (.xlsx/.xls) as a new form and set of responses, ready for the "
                 + "Dataset, Quality, and Analysis workspaces.");
         hint.getStyleClass().add("muted");
         hint.setWrapText(true);
 
-        var choose = new Button("Choose CSV file…");
         choose.setOnAction(event -> chooseFile());
         var fileRow = new HBox(10, choose, fileLabel);
         title.setPromptText("Form title for the imported data");
 
         var form = new GridPane();
+        form.getStyleClass().add("content-panel");
         form.setHgap(10);
         form.setVgap(10);
         form.addRow(0, new Label("File"), fileRow);
         form.addRow(1, new Label("Form title"), title);
+        worksheet.setPromptText("Excel worksheet"); worksheet.setDisable(true);
+        worksheet.setOnAction(event -> { if (!loadingSheets && worksheet.getValue() != null) loadPreview(); });
+        form.addRow(2, new Label("Worksheet (Excel)"), worksheet);
+        var formatHelp = new Label("CSV/TSV: first row is headers. Excel: select one worksheet; first non-empty row is headers. JSON: array of flat row objects, or {\"data\": [...]}. Excel formulas use saved results; save the workbook before importing.");
+        formatHelp.setWrapText(true); form.add(formatHelp, 0, 3, 2, 1);
 
         status.getStyleClass().add("field-error");
         status.setWrapText(true);
@@ -89,7 +97,8 @@ public final class ImportWorkspaceView {
         cancel.setOnAction(event -> { if (cancellation != null) { cancellation.cancel(); status.setText("Cancellation requested; waiting for the current row to finish."); } });
         var columnsTitle = new Label("Columns");
         columnsTitle.getStyleClass().add("section-title");
-        columnsBox.getChildren().setAll(new Label("Choose a file to see its columns."));
+        columnsBox.getChildren().setAll(Visuals.emptyState("Import", "Bring your data into focus",
+                "Choose a file above to preview and map its columns."));
         var columnsScroll = new ScrollPane(columnsBox);
         columnsScroll.setFitToWidth(true);
 
@@ -103,8 +112,12 @@ public final class ImportWorkspaceView {
 
     private void chooseFile() {
         var chooser = new FileChooser();
-        chooser.setTitle("Choose a CSV file");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV files", "*.csv"));
+        chooser.setTitle("Choose a dataset file");
+        chooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Dataset files", "*.csv", "*.tsv", "*.json", "*.xlsx", "*.xls"),
+                new FileChooser.ExtensionFilter("Excel workbooks", "*.xlsx", "*.xls"),
+                new FileChooser.ExtensionFilter("CSV / TSV", "*.csv", "*.tsv"),
+                new FileChooser.ExtensionFilter("JSON", "*.json"));
         var window = root.getScene() == null ? null : root.getScene().getWindow();
         var file = chooser.showOpenDialog(window);
         if (file == null) return;
@@ -116,16 +129,38 @@ public final class ImportWorkspaceView {
             var dot = name.lastIndexOf('.');
             title.setText(dot > 0 ? name.substring(0, dot) : name);
         }
+        preview = null; columnRows.clear();
+        loadingSheets = true; worksheet.getItems().clear(); loadingSheets = false;
+        worksheet.setDisable(true);
+        if (researchflow.dataimport.DatasetFileReader.isExcel(selectedFile)) {
+            choose.setDisable(true); importButton.setDisable(true);
+            var filePath = selectedFile;
+            async.run(() -> service.worksheets(filePath), names -> {
+                loadingSheets = true;
+                worksheet.getItems().setAll(names); worksheet.setValue(names.getFirst());
+                loadingSheets = false; loadPreview();
+            }, this::previewFailed);
+        } else loadPreview();
+    }
+
+    private void loadPreview() {
+        preview = null; columnRows.clear();
         status.setText("");
-        columnsBox.getChildren().setAll(new Label("Loading preview…"));
-        importButton.setDisable(true);
-        async.run(() -> service.preview(selectedFile), this::showPreview, failure -> {
-            columnsBox.getChildren().setAll(new Label("Choose a file to see its columns."));
-            errors.accept(failure);
-        });
+        columnsBox.getChildren().setAll(new Label("Loading preview..."));
+        importButton.setDisable(true); choose.setDisable(true); worksheet.setDisable(true);
+        var filePath = selectedFile; var sheet = worksheet.getValue();
+        async.run(() -> service.preview(filePath, sheet), this::showPreview, this::previewFailed);
+    }
+
+    private void previewFailed(Throwable failure) {
+        preview = null; choose.setDisable(false); importButton.setDisable(true);
+        worksheet.setDisable(worksheet.getItems().isEmpty());
+        columnsBox.getChildren().setAll(new Label("Choose a file or another worksheet to see its columns."));
+        status.setText(failure.getMessage());
     }
 
     private void showPreview(ImportPreview loaded) {
+        choose.setDisable(false); worksheet.setDisable(worksheet.getItems().isEmpty());
         preview = loaded;
         columnRows.clear();
         columnsBox.getChildren().clear();
@@ -147,11 +182,12 @@ public final class ImportWorkspaceView {
     private void runImport() {
         status.setText("");
         if (preview == null) {
-            status.setText("Choose a CSV file first.");
+            status.setText("Choose a dataset file first.");
             return;
         }
         var columns = columnRows.stream().map(ColumnRow::currentPlan).toList();
         importButton.setDisable(true);
+        choose.setDisable(true); worksheet.setDisable(true); columnsBox.setDisable(true); title.setDisable(true);
         var formTitle = title.getText();
         var selectedPreview = preview;
         cancellation = new researchflow.service.CancellationToken();
@@ -160,14 +196,20 @@ public final class ImportWorkspaceView {
             if (count % 100 == 0 || count == selectedPreview.document().rows().size())
                 async.update(() -> status.setText("Processed " + count + " of " + selectedPreview.document().rows().size() + " rows."));
         }), this::showResult, failure -> {
-            importButton.setDisable(false);
+            finishImport();
             if (failure instanceof ValidationException issue) status.setText(String.join(" ", issue.errors().values()));
             else errors.accept(failure);
         });
     }
 
+    private void finishImport() {
+        cancellation = null;
+        importButton.setDisable(false); choose.setDisable(false);
+        worksheet.setDisable(worksheet.getItems().isEmpty()); columnsBox.setDisable(false); title.setDisable(false);
+    }
+
     private void showResult(ImportResult result) {
-        importButton.setDisable(false);
+        finishImport();
         var message = new StringBuilder(result.summary());
         if (result.skippedCount() > 0) message.append(' ').append(result.skippedCount()).append(" row(s) skipped.");
 

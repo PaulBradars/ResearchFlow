@@ -109,6 +109,21 @@ class JdbcQualityRepositoryTest {
                 () -> fixture.review().apply(new ReviewCommand.Defer(missing.id(), "Try to defer again")));
     }
 
+    @Test
+    void deferredIssuesRemainReviewableAndTerminalReviewsCannotBeOverwritten() throws Exception {
+        var fixture = fixture();
+        insertDirtyResponse(fixture);
+        var issue = fixture.quality().scan(fixture.studyId()).stream()
+                .filter(value -> value.type() == QualityIssueType.MISSING_REQUIRED).findFirst().orElseThrow();
+        var deferred = fixture.review().apply(new ReviewCommand.Defer(issue.id(), "Check source later"));
+        assertEquals(QualityIssueStatus.DEFERRED, deferred.status());
+        org.junit.jupiter.api.Assertions.assertNull(deferred.resolvedAt());
+        fixture.review().apply(new ReviewCommand.Accept(issue.id(), "Source confirms this is valid"));
+        var repository = new JdbcQualityRepository(fixture.connections(), new TransactionManager(fixture.connections()));
+        assertThrows(IllegalArgumentException.class, () -> repository.markDeferred(issue.id(), "Stale request"));
+        assertEquals(QualityIssueStatus.ACCEPTED, repository.findById(issue.id()).orElseThrow().status());
+    }
+
     private void insertDirtyResponse(Fixture fixture) throws Exception {
         try (var connection = fixture.connections().open()) {
             try (var statement = connection.prepareStatement("""

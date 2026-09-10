@@ -78,6 +78,33 @@ class DatasetImportServiceTest {
                 () -> fixture.imports().importInto(fixture.studyId(), "Title", preview, excluded));
     }
 
+    @Test
+    void importsTsvJsonAndBothExcelFormatsIntoTheSameDatasetPipeline() throws Exception {
+        var fixture = fixture();
+        for (var extension : List.of("tsv", "json", "xlsx", "xls")) {
+            var file = temporaryDirectory.resolve("responses." + extension);
+            if (extension.equals("tsv")) Files.writeString(file, "name\tage\nAda\t24\nGrace\t36\n");
+            else if (extension.equals("json")) Files.writeString(file,
+                    "[{\"name\":\"Ada\",\"age\":24},{\"name\":\"Grace\",\"age\":36}]");
+            else try (org.apache.poi.ss.usermodel.Workbook workbook = extension.equals("xlsx")
+                    ? new org.apache.poi.xssf.usermodel.XSSFWorkbook() : new org.apache.poi.hssf.usermodel.HSSFWorkbook()) {
+                var sheet = workbook.createSheet("Data");
+                var header = sheet.createRow(0); header.createCell(0).setCellValue("name"); header.createCell(1).setCellValue("age");
+                var ada = sheet.createRow(1); ada.createCell(0).setCellValue("Ada"); ada.createCell(1).setCellValue(24);
+                var grace = sheet.createRow(2); grace.createCell(0).setCellValue("Grace"); grace.createCell(1).setCellValue(36);
+                try (var output = Files.newOutputStream(file)) { workbook.write(output); }
+            }
+            var preview = fixture.imports().preview(file);
+            assertEquals(QuestionType.NUMBER, preview.columns().get(1).type());
+            var result = fixture.imports().importInto(fixture.studyId(), extension + " import", preview, preview.columns());
+            assertTrue(result.completedNormally()); assertEquals(2, result.importedCount());
+            var form = fixture.formService().require(result.formId());
+            var page = fixture.datasets().query(fixture.studyId(), new DatasetQuery(form.id(), "", null, null, "", null, null, 0, 50));
+            assertEquals(2, page.totalRows());
+            assertTrue(page.rows().stream().anyMatch(row -> row.cell(form.questions().get(0).id()).displayValue().equals("Ada")));
+        }
+    }
+
     private static ImportColumnPlan withRequired(ImportColumnPlan plan, boolean required) {
         return new ImportColumnPlan(plan.columnIndex(), plan.header(), plan.variableKey(), plan.label(),
                 plan.type(), required, plan.included());

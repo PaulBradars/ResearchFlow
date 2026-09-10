@@ -28,6 +28,9 @@ public final class ReasonDialog {
             if (value.length() < 3) {
                 error.setText("Provide at least 3 characters.");
                 event.consume();
+            } else if (value.length() > 1_000) {
+                error.setText("Use 1,000 characters or fewer.");
+                event.consume();
             }
         });
         dialog.setResultConverter(button -> button == ButtonType.OK ? text.getText().strip() : null);

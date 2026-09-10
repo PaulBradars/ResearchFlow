@@ -13,6 +13,11 @@ public final class CsvParser {
     private CsvParser() { }
 
     public static CsvDocument parse(String content) {
+        return parse(content, ',');
+    }
+
+    public static CsvDocument parse(String content, char delimiter) {
+        if (content.startsWith("\uFEFF")) content = content.substring(1);
         var rows = new ArrayList<List<String>>();
         var currentRow = new ArrayList<String>();
         var field = new StringBuilder();
@@ -37,9 +42,11 @@ public final class CsvParser {
                 index++;
                 continue;
             }
+            if (character == delimiter) {
+                currentRow.add(field.toString()); field.setLength(0); rowStarted = true; index++; continue;
+            }
             switch (character) {
                 case '"' -> { inQuotes = true; rowStarted = true; index++; }
-                case ',' -> { currentRow.add(field.toString()); field.setLength(0); rowStarted = true; index++; }
                 case '\r' -> index++;
                 case '\n' -> {
                     currentRow.add(field.toString());
@@ -52,6 +59,7 @@ public final class CsvParser {
                 default -> { field.append(character); rowStarted = true; index++; }
             }
         }
+        if (inQuotes) throw new ImportException("Unclosed quoted field in the file.");
         if (rowStarted || !field.isEmpty() || !currentRow.isEmpty()) {
             currentRow.add(field.toString());
             rows.add(currentRow);

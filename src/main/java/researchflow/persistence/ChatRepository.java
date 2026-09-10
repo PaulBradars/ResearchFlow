@@ -9,4 +9,8 @@ public interface ChatRepository {
     void save(ChatMessage message);
 
     List<ChatMessage> findByStudy(UUID studyId, int limit);
+
+    List<ChatMessage> findAllByStudy(UUID studyId);
+
+    void deleteByStudy(UUID studyId);
 }

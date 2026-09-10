@@ -12,7 +12,7 @@ This guide explains the available features, what each main option does, and how 
 4. [Studies and dashboard](#4-studies-and-dashboard)
 5. [Designing forms](#5-designing-forms)
 6. [Collecting and viewing responses](#6-collecting-and-viewing-responses)
-7. [Importing CSV data](#7-importing-csv-data)
+7. [Importing datasets](#7-importing-datasets)
 8. [Inspecting and correcting the dataset](#8-inspecting-and-correcting-the-dataset)
 9. [Quality review](#9-quality-review)
 10. [Dataset versions](#10-dataset-versions)
@@ -37,7 +37,7 @@ ResearchFlow AI is a desktop workspace for collecting research data, reviewing i
 | Form design | Create a draft, add typed questions, reorder questions, preview, activate, and close collection | Form |
 | Local collection | Enter and validate one response at a time | Form → Collect response |
 | Response overview | See submission time, number of answers, and collection duration when available | Responses |
-| CSV import | Create a form and responses from an external CSV, review inferred types, and inspect partial outcomes | Import |
+| Dataset import | Create a form and responses from CSV, TSV, JSON, or Excel, review inferred types, and inspect partial outcomes | Import |
 | Dataset inspection | Search, filter, sort, page through answers, and open response details | Dataset |
 | Corrections | Replace a value with a documented reason and retained history | Dataset → Response details → Correct |
 | Audit history | Review recorded activity and correction events | Dataset → Audit timeline |
@@ -106,7 +106,7 @@ The application opens on **Studies**. Double-click a study row to open it. The l
 | Dashboard | Opens the current study's overview |
 | Form | Opens questionnaire design and collection |
 | Responses | Lists submitted responses |
-| Import | Opens CSV import |
+| Import | Opens dataset import |
 | Dataset | Opens answer inspection, correction, and the audit timeline |
 | Quality / Versions | Opens the Issues and Versions tabs |
 | Analysis | Opens Run analysis, Ask Your Data, and History tabs |
@@ -217,13 +217,25 @@ The **Responses** table shows the form, submission timestamp, answer count, and 
 
 A response can contain no answers when its questions are optional. Complete dataset snapshots retain such responses so missing-data counts can represent them.
 
-## 7. Importing CSV data
+## 7. Importing datasets
 
-Use **Import** to create a **new form and new responses** from a CSV file. It does not append into an existing form or automatically match/deduplicate prior imports.
+Use **Import** to create a **new form and new responses** from a CSV, TSV, JSON, XLSX, or XLS file. It does not append into an existing form or automatically match/deduplicate prior imports.
 
 ### Preparing the file
 
-Use a UTF-8 CSV with a header row and one subsequent row per response. Use simple numeric values for numbers and `YYYY-MM-DD` for dates. Quote a value if it contains commas or line breaks. Save spreadsheet data as CSV before importing; XLSX is not a supported input format.
+For CSV or TSV, use UTF-8 text with a header row and one subsequent row per response. TSV uses tabs between columns. Quote values containing delimiters or line breaks. Use simple numeric values for numbers and `YYYY-MM-DD` for dates.
+
+For Excel (`.xlsx` or `.xls`), choose a worksheet from the **Worksheet (Excel)** selector. The first non-empty row becomes headers; subsequent non-empty rows become responses. Date cells become ISO dates. Formula cells use their saved results: recalculate and save the workbook in Excel first. Fix Excel error cells before importing. Password-protected workbooks are not supported.
+
+For JSON, use an array of flat objects, for example:
+
+```json
+[{"participant":"P01","age":24},{"participant":"P02","age":null}]
+```
+
+A wrapper such as `{"data": [...]}` is also supported. Keys across all rows become columns in first-seen order; missing keys and null values become blank answers. Nested objects and arrays must be flattened first. Choose **Short text** for identifiers or numbers whose exact textual representation must be retained; Number answers use floating-point storage.
+
+Files are limited to 50 MB; JSON additionally has a 10-million-character limit. Excel imports allow up to 100,000 data rows and 1,000 columns per sheet. Import receipt row numbers refer to the parsed table (header is row 1), not original Excel row positions when blank rows were skipped.
 
 ```csv
 participant,sleep_hours,focus_score,observation_date
@@ -236,10 +248,11 @@ P03,,5,2026-09-03
 
 | Option / field | What it does |
 |---|---|
-| Choose CSV file… | Reads the file, counts data rows, and proposes a column plan |
+| Choose dataset file... | Reads the file, counts data rows, and proposes a column plan |
+| Worksheet (Excel) | Selects the worksheet to preview and import |
 | Form title | Names the new form that will hold imported responses |
-| Column checkbox | Includes or ignores that CSV column |
-| Column | Shows the original CSV header |
+| Column checkbox | Includes or ignores that source column |
+| Column | Shows the original column header |
 | Label | Sets the question label for the imported column |
 | Type | Lets you choose Short text, Number, or Date; review the inferred choice |
 | Required | Treats a blank value in that column as invalid for row submission |
@@ -247,7 +260,7 @@ P03,,5,2026-09-03
 | Cancel import | Requests a stop at a processing boundary and returns a partial-result receipt |
 | Save import outcome and errors | Saves the outcome summary and row errors to a text file |
 
-Review every included column before choosing **Import**. At least one must be included, and the form title is required. Variable keys are generated from the headers. Categorical form types such as Single choice and Yes / No are not offered in the current CSV mapping UI; an imported text grouping column does not become a categorical analysis variable automatically.
+Review every included column before choosing **Import**. At least one must be included, and the form title is required. Variable keys are generated from the headers. Categorical form types such as Single choice and Yes / No are not offered in the current import mapping UI; an imported text grouping column does not become a categorical analysis variable automatically.
 
 ### Understanding the outcome
 
@@ -323,22 +336,29 @@ Open **Quality / Versions → Issues** and choose **Scan for quality issues**.
 | Simple outlier | A numeric value is flagged by the implemented IQR-based check |
 | Unusually fast submission | Recorded completion time is unusually short under the implemented rule |
 
-The table shows type, severity, affected response, explanation, and detection time. A flag requests review; it does not prove that an answer is wrong. Scanning records/reconciles issues and is therefore unavailable for archived studies.
+The table shows type, severity, status, affected response, explanation, and detection time. Click a row once to show its explanation, review note, and available actions below the table. Double-click the row, press Enter, or choose **Review this issue / Review selected** to open its review dialog. A flag requests review; it does not prove that an answer is wrong. Scanning records/reconciles issues and is therefore unavailable for archived studies.
 
 | Option | What it does |
 |---|---|
-| Status | Filters the issue list by Open, Accepted, Deferred, or Resolved; Open is selected initially |
-| Scan for quality issues | Rechecks the current live dataset and displays open issues |
+| Status | Filters by Open, Accepted, Deferred, Resolved, or All statuses; Open is selected initially |
+| Refresh | Reloads saved issues without running a scan |
+| View response | Shows the affected response and its current answers without changing data |
+| Type / Severity | Combine issue type and severity criteria with the status filter |
+| Search | Matches explanation, response ID, question ID, or review note, ignoring case |
+| Clear filters | Shows all saved issues in every status |
+| Scan for quality issues | Rechecks the live dataset and preserves the selected filters; count shows matching versus total issues |
 | Review selected | Opens the selected issue and applicable actions |
-| Correct | Replaces the specific affected answer and resolves its issue together; requires an issue with a question target |
+| Correct answer | Replaces the specific affected answer and resolves its issue together; requires an issue with a question target |
 | Accept | Records a reason for accepting the issue without changing its answer |
 | Defer | Records a reason to postpone the decision |
 | Exclude response | Excludes the affected response from eligible analysis populations; retains the record |
 | Accept selected / Defer selected / Exclude selected | Applies the corresponding decision to multiple selected issues |
 
-Use Ctrl-click or Shift-click to select multiple rows. Supply the requested reason or note and review the confirmation. Bulk decisions are processed independently: a later failure does not undo earlier successful decisions.
+Use Ctrl-click or Shift-click to select multiple rows. Supply a reason or note of 3?1,000 characters and review the confirmation. Number corrections must be finite and within configured bounds; dates use YYYY-MM-DD. Invalid input remains in the editor with an error so you can fix it without re-entering the reason. Bulk decisions are processed independently: a later failure does not undo earlier successful decisions.
 
 **Accepted** means the issue has been reviewed and accepted, not that its data was corrected. **Resolved** records resolution. Open and Deferred issues offer applicable review actions; an issue with no question target cannot be used to correct an arbitrary answer.
+
+After Accept, Defer, or Correct/Exclude, the issue leaves the Open list. Use Accepted, Deferred, Resolved, or All statuses to find it again. Accepted and Resolved issues are read-only; Deferred issues can still be reviewed. Duplicate and fast-submission flags target the whole response, so they do not offer **Correct answer**. Use **View response** to inspect them, then Accept, Defer, or Exclude as appropriate. Run another scan after data changes to resolve other flags whose conditions no longer exist.
 
 There is no general **Undo exclusion** button in this screen. Restoring a complete snapshot made before exclusion can recover its earlier exclusion state, but also restores that snapshot's other dataset values. Save an appropriate snapshot before substantial cleaning decisions.
 
@@ -440,7 +460,15 @@ Examples, assuming the named variables exist:
 
 AI proposes a plan; the application validates its variables and method and computes the statistics using the same implemented analysis pipeline. Unsupported or invalid plans can be rejected. AI does not add new statistical methods or automatically approve findings. Review the evidence even when the explanation sounds confident.
 
-Saved chat messages can be reopened with the study. If an explanation fails after computation, a saved analysis may still exist; inspect **History** before repeating the request. Manual analysis remains available if AI is disabled, unreachable, or fails.
+New statistical chat answers include a fuller AI interpretation and an expanded **Computed statistical breakdown** panel. Correlation includes Pearson r with greater precision, direction, r squared, and each variable's mean, median, sample standard deviation, minimum, and maximum on the same paired rows and saved snapshot. Identifier-like labels such as CustomerID receive a caution about interpretation. Constant variables or insufficient pairs are marked not estimable. Numeric summaries, frequencies, cross-tabulations, and group comparisons also include supporting statistics and explanation of their denominators or units; cross-tabulations include row and overall percentages.
+
+The computed breakdown remains available if AI explanation generation fails, and is included in saved/exported chat. Old chat replies retain their original content; rerun the query for the expanded format. P-values, confidence intervals, and automated outlier/distribution checks are not computed by this feature; the AI is instructed not to claim them.
+
+You can also ask everyday questions, request explanations, or ask for app help. These replies do not create statistical evidence. Basic greetings such as “How are you?” work immediately, even without a running model. Other questions use the configured runtime, with the latest 12 chat messages as bounded context for follow-ups. The assistant has no live internet or location access.
+
+Saved chat messages can be reopened with the study; the screen shows the latest 250 messages. **Save chat history** exports the complete conversation as a UTF-8 text file, including timestamps and linked analysis IDs. **Clear chat** asks for confirmation and removes this study's chat messages and conversation context, while keeping analyses and findings. Save a copy before clearing if you need one. Press Enter or click **Ask** to send a message.
+
+If an explanation fails after computation, a saved analysis may still exist; inspect **History** before repeating the request. Manual analysis remains available if AI is disabled, unreachable, or fails.
 
 The endpoint determines where AI requests go. Keep the default local endpoint if you intend to use a local runtime; configuring another host sends requests to that configured service. An automatically selected model is a selection policy, not a promise of a particular model.
 
@@ -669,7 +697,7 @@ Startup checks paths, directory writability, timeout values, flags, endpoint for
 
 ## 19. Limits and everyday checklist
 
-The current application has five analysis methods, local desktop collection, CSV import, and HTML report export. It does not provide regression/ANOVA, public survey hosting, cloud synchronization, authentication, mobile collection, PDF/DOCX export, a general undo system, or a finding-revision-history screen. Import preview is memory-based, and import/bulk review can finish partially. Some long-running work stops only at a safe boundary after cancellation.
+The current application has five analysis methods, local desktop collection, dataset import (CSV/TSV/JSON/Excel), and HTML report export. It does not provide regression/ANOVA, public survey hosting, cloud synchronization, authentication, mobile collection, PDF/DOCX export, a general undo system, or a finding-revision-history screen. Import preview is memory-based, and import/bulk review can finish partially. Some long-running work stops only at a safe boundary after cancellation.
 
 For routine work:
 

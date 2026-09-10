@@ -36,6 +36,9 @@ public final class AskYourDataView {
     private final Label status = new Label();
     private final Label progress = new Label();
     private final Button ask = new Button("Ask");
+    private final Button clear = new Button("Clear chat");
+    private final Button save = new Button("Save chat history");
+    private boolean busy;
     private final Study study;
     private final AnalysisFacade facade;
     private final AnalysisService analysisService;
@@ -61,6 +64,9 @@ public final class AskYourDataView {
         question.setPromptText("e.g. How is sleep duration associated with academic focus?");
         ask.getStyleClass().add("primary-button");
         ask.setOnAction(event -> ask());
+        question.setOnAction(event -> { if (!busy) ask(); });
+        clear.setOnAction(event -> clearHistory());
+        save.setOnAction(event -> saveHistory());
         var bar = new HBox(8, question, ask);
         HBox.setHgrow(question, Priority.ALWAYS);
 
@@ -72,7 +78,9 @@ public final class AskYourDataView {
         var scroll = new ScrollPane(transcript);
         scroll.setFitToWidth(true);
 
-        root.getChildren().addAll(eyebrow, title, bar, status, progress, scroll);
+        var hint = new Label("Chat naturally, ask for help, or analyze your data. History is saved automatically; export a copy below.");
+        hint.setWrapText(true);
+        root.getChildren().addAll(eyebrow, title, hint, bar, new HBox(8, clear, save), status, progress, scroll);
         VBox.setVgrow(scroll, Priority.ALWAYS);
         checkAvailability();
         refresh();
@@ -84,14 +92,61 @@ public final class AskYourDataView {
 
     private void checkAvailability() {
         async.run(facade::aiAvailable, available -> {
-            ask.setDisable(!available);
             status.setText(available ? ""
-                    : "Local AI is not available right now. Manual analysis still works from the Run analysis tab.");
+                    : "Local AI is unavailable. Basic greetings still work; start the local runtime for other questions.");
         }, errors);
     }
 
     private void refresh() {
-        async.run(() -> facade.history(study.id()), this::showHistory, errors);
+        setBusy(true);
+        async.run(() -> facade.history(study.id()), messages -> {
+            showHistory(messages);
+            setBusy(false);
+        }, failure -> { setBusy(false); errors.accept(failure); });
+    }
+
+    private void setBusy(boolean value) {
+        busy = value;
+        ask.setDisable(value);
+        question.setDisable(value);
+        clear.setDisable(value);
+        save.setDisable(value);
+    }
+
+    private void clearHistory() {
+        var confirmation = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION,
+                "Clear this Study's chat history? Saved analyses and findings will remain. Export a copy first if needed.",
+                javafx.scene.control.ButtonType.CANCEL, javafx.scene.control.ButtonType.OK);
+        confirmation.initOwner(root.getScene().getWindow());
+        confirmation.setHeaderText("Clear chat history");
+        if (confirmation.showAndWait().orElse(javafx.scene.control.ButtonType.CANCEL)
+                != javafx.scene.control.ButtonType.OK) return;
+        setBusy(true);
+        async.run(() -> facade.clearHistory(study.id()), () -> {
+            transcript.getChildren().clear();
+            status.setText("");
+            progress.setText("Chat history cleared.");
+            setBusy(false);
+        }, failure -> { setBusy(false); errors.accept(failure); });
+    }
+
+    private void saveHistory() {
+        var chooser = new javafx.stage.FileChooser();
+        chooser.setTitle("Save chat history");
+        chooser.setInitialFileName("researchflow-chat-" + java.time.LocalDate.now() + ".txt");
+        chooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Text files", "*.txt"));
+        var file = chooser.showSaveDialog(root.getScene().getWindow());
+        if (file == null) return;
+        setBusy(true);
+        async.run(() -> {
+            try {
+                java.nio.file.Files.writeString(file.toPath(), facade.exportHistory(study.id()),
+                        java.nio.charset.StandardCharsets.UTF_8);
+            } catch (java.io.IOException failure) { throw new java.io.UncheckedIOException(failure); }
+        }, () -> {
+            progress.setText("Chat history saved to " + file.getAbsolutePath());
+            setBusy(false);
+        }, failure -> { setBusy(false); errors.accept(failure); });
     }
 
     private void showHistory(List<ChatMessage> messages) {
@@ -102,24 +157,26 @@ public final class AskYourDataView {
     }
 
     private void ask() {
+        if (busy || question.getText().isBlank()) return;
         var text = question.getText();
         status.setText("");
-        ask.setDisable(true);
+        setBusy(true);
         progress.setText("Thinking… a local model can take up to a minute, especially on the first "
                 + "request while it loads.");
         async.run(() -> facade.ask(study.id(), text), answer -> {
             progress.setText("");
             question.clear();
-            checkAvailability();
+            setBusy(false);
             var now = java.time.Instant.now();
             transcript.getChildren().add(bubble("You", text, now));
             transcript.getChildren().add(bubble("AI", answer.explanation(), now));
-            transcript.getChildren().add(EvidenceView.render(answer.evidence()));
-            transcript.getChildren().add(EvidenceActions.createFindingButton(study, answer.evidence(),
-                    analysisService, findingService, async, errors));
+            if (answer.evidence() != null) {
+                transcript.getChildren().add(EvidenceActions.createFindingButton(study, answer.evidence(),
+                        analysisService, findingService, async, errors));
+            }
         }, failure -> {
             progress.setText("");
-            checkAvailability();
+            setBusy(false);
             if (failure instanceof ValidationException issue) status.setText(String.join(" ", issue.errors().values()));
             else if (failure instanceof LlmException llmFailure) status.setText(describe(llmFailure));
             else errors.accept(failure);
@@ -143,9 +200,26 @@ public final class AskYourDataView {
     private static Parent bubble(String speaker, String content, java.time.Instant timestamp) {
         var header = new Label(speaker + " · " + TIMESTAMP.format(timestamp));
         header.getStyleClass().add("muted");
-        var body = new Label(content);
+        var marker = "\n\nStatistical breakdown\n";
+        int breakdownAt = content.indexOf(marker);
+        var body = new Label(breakdownAt < 0 ? content : content.substring(0, breakdownAt));
         body.setWrapText(true);
         var box = new VBox(3, header, body);
+        if (breakdownAt >= 0) {
+            var details = new VBox(6);
+            details.setPadding(new Insets(10));
+            for (var line : content.substring(breakdownAt + marker.length()).split("\n")) {
+                var label = new Label(line);
+                label.setWrapText(true);
+                if (List.of("Descriptive statistics on the same paired rows", "Interpretation limits",
+                        "Data quality and limitations").contains(line)) label.getStyleClass().add("question-label");
+                details.getChildren().add(label);
+            }
+            var panel = new javafx.scene.control.TitledPane("Computed statistical breakdown", details);
+            panel.setExpanded(true);
+            panel.setAnimated(false);
+            box.getChildren().add(panel);
+        }
         box.getStyleClass().add(speaker.equals("You") ? "chat-user" : "chat-assistant");
         box.setPadding(new Insets(10));
         return box;

@@ -5,7 +5,7 @@ import java.util.UUID;
 
 /**
  * A reviewable, deterministically detected data-quality problem. Detection never changes data;
- * only a researcher review action (see {@code researchflow.command.ReviewCommand}) changes status.
+ * researcher review actions change status, and rescans resolve conditions no longer present.
  */
 public record QualityIssue(UUID id, UUID studyId, UUID datasetVersionId, QualityIssueType type,
                            QualitySeverity severity, QualityIssueStatus status, UUID responseId,

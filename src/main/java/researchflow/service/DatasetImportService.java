@@ -1,6 +1,5 @@
 package researchflow.service;
 
-import researchflow.dataimport.CsvParser;
 import researchflow.dataimport.ImportColumnPlan;
 import researchflow.dataimport.ImportException;
 import researchflow.dataimport.ImportPlanner;
@@ -20,7 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Imports an external CSV file into a Study as a new Form and its Responses, reusing the existing
+ * Imports an external dataset file into a Study as a new Form and its Responses, reusing the existing
  * collection pipeline end to end: {@link FormService} creates and activates the Form exactly as the
  * Form workspace would, and {@link ResponseSubmissionService} validates and persists each row exactly
  * as a respondent submission would. Once imported, the data is ordinary Form/Response data — Dataset,
@@ -41,7 +40,13 @@ public final class DatasetImportService {
 
     /** Parses the file and proposes a column plan (type-inferred, all included, none required) for review. */
     public ImportPreview preview(Path csvFile) {
-        var document = CsvParser.parse(readFile(csvFile));
+        return preview(csvFile, null);
+    }
+
+    public List<String> worksheets(Path file) { return researchflow.dataimport.DatasetFileReader.sheets(file); }
+
+    public ImportPreview preview(Path file, String worksheet) {
+        var document = researchflow.dataimport.DatasetFileReader.read(file, worksheet);
         return new ImportPreview(document, ImportPlanner.planColumns(document));
     }
 
@@ -65,7 +70,7 @@ public final class DatasetImportService {
         var errors = new ArrayList<ImportRowError>();
         try {
             token.check();
-            var form = forms.create(studyId, normalizedTitle, "Imported from a CSV file.");
+            var form = forms.create(studyId, normalizedTitle, "Imported from an external dataset file.");
             formId = form.id();
             var questions = included.stream().map(column -> Question.create(column.variableKey(), column.label(), "",
                     column.type(), column.required(), null, null, List.of())).toList();
@@ -77,6 +82,12 @@ public final class DatasetImportService {
             for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
                 token.check();
                 var row = rows.get(rowIndex);
+                if (row.size() > preview.document().headers().size()) {
+                    skipped++;
+                    errors.add(new ImportRowError(rowIndex + 2, "More values than header columns; row was not imported."));
+                    progress.accept(imported + skipped);
+                    continue;
+                }
                 var rawAnswers = new LinkedHashMap<UUID, String>();
                 for (int index = 0; index < included.size(); index++) {
                     int column = included.get(index).columnIndex();
@@ -127,11 +138,4 @@ public final class DatasetImportService {
         return message == null || message.isBlank() ? exception.getClass().getSimpleName() : message;
     }
 
-    private static String readFile(Path csvFile) {
-        try {
-            return Files.readString(csvFile, StandardCharsets.UTF_8);
-        } catch (IOException exception) {
-            throw new ImportException("Could not read the file: " + exception.getMessage(), exception);
-        }
-    }
 }

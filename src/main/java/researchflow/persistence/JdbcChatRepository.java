@@ -43,11 +43,33 @@ public final class JdbcChatRepository implements ChatRepository {
     @Override
     public List<ChatMessage> findByStudy(UUID studyId, int limit) {
         var bounded = Math.max(1, Math.min(500, limit));
+        return load(studyId, bounded);
+    }
+
+    @Override
+    public List<ChatMessage> findAllByStudy(UUID studyId) {
+        return load(studyId, -1);
+    }
+
+    @Override
+    public void deleteByStudy(UUID studyId) {
+        new TransactionManager(connections).inTransaction(connection -> {
+            JdbcStudyRepository.requireWritable(connection, studyId);
+            try (var statement = connection.prepareStatement("DELETE FROM chat_references WHERE study_id=?")) {
+                statement.setString(1, studyId.toString());
+                statement.executeUpdate();
+            }
+            return null;
+        });
+    }
+
+    private List<ChatMessage> load(UUID studyId, int limit) {
         try (var connection = connections.open();
              var statement = connection.prepareStatement(
-                     "SELECT * FROM chat_references WHERE study_id=? ORDER BY created_at ASC LIMIT ?")) {
+                     "SELECT * FROM (SELECT rowid AS sequence, * FROM chat_references WHERE study_id=? "
+                             + "ORDER BY created_at DESC, rowid DESC LIMIT ?) ORDER BY created_at ASC, sequence ASC")) {
             statement.setString(1, studyId.toString());
-            statement.setInt(2, bounded);
+            statement.setInt(2, limit);
             try (var rows = statement.executeQuery()) {
                 var messages = new ArrayList<ChatMessage>();
                 while (rows.next()) messages.add(mapMessage(rows));

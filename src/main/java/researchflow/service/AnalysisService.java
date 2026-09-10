@@ -90,8 +90,8 @@ public final class AnalysisService {
     }
 
     /**
-     * Re-derives the raw, version-bound numeric values behind a plan's variable(s) — used only for
-     * chart building, never for statistics (those come from the already-computed {@code EvidenceBundle}).
+     * Re-derives the raw, version-bound numeric values behind a plan's variable(s) for charts and
+     * supplemental paired descriptive statistics. The primary result stays in the stored evidence.
      * {@code resolvedVersionId} must be the explicit version a prior {@link #run} resolved to, so the
      * chart is guaranteed to reflect the exact same immutable snapshot as the analysis it illustrates.
      */

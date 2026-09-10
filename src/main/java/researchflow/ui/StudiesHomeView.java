@@ -51,7 +51,8 @@ public final class StudiesHomeView {
         title.getStyleClass().add("page-title");
         var subtitle = new Label("Create, open, and archive local research workspaces.");
         subtitle.getStyleClass().add("muted");
-        var heading = new VBox(4, title, subtitle);
+        var heading = Visuals.hero("YOUR RESEARCH WORKSPACE", "Good research starts here.",
+                "Design studies, collect responses, and turn your data into evidence.");
 
         var create = new Button("New study");
         create.getStyleClass().add("primary-button");

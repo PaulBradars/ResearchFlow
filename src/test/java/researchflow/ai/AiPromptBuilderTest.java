@@ -15,6 +15,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AiPromptBuilderTest {
     @Test
+    void conversationUsesRecentBoundedContextAndKeepsCurrentMessageLast() {
+        var studyId = UUID.randomUUID();
+        var messages = new java.util.ArrayList<researchflow.domain.ChatMessage>();
+        messages.add(researchflow.domain.ChatMessage.user(studyId, null, "obsolete context"));
+        for (int i = 0; i < 12; i++) {
+            messages.add(researchflow.domain.ChatMessage.assistant(studyId, null, "x".repeat(2000)));
+        }
+        var prompt = AiPromptBuilder.conversationPrompt(messages, "Explain that simply");
+        org.junit.jupiter.api.Assertions.assertFalse(prompt.contains("obsolete context"));
+        assertTrue(prompt.length() < 15000);
+        assertTrue(prompt.endsWith("CURRENT message:\nExplain that simply"));
+        assertTrue(AiPromptBuilder.planPrompt(List.of()).contains("{\"reply\""));
+    }
+
+    @Test
     void planPromptListsEveryVariableIdAndLabelAndEveryMethod() {
         var sleep = Question.create("sleep_hours", "Sleep hours", "", QuestionType.NUMBER, true, 0d, 16d, List.of());
         var prompt = AiPromptBuilder.planPrompt(List.of(sleep));

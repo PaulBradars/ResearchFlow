@@ -199,13 +199,14 @@ public final class JdbcQualityRepository implements QualityRepository {
             }
         }
         try (var statement = connection.prepareStatement("""
-                UPDATE quality_issues SET status=?, resolution_note=?, resolved_at=? WHERE id=?
+                UPDATE quality_issues SET status=?, resolution_note=?, resolved_at=? WHERE id=? AND status IN ('OPEN','DEFERRED')
                 """)) {
             statement.setString(1, status);
             statement.setString(2, note == null ? "" : note);
-            statement.setString(3, now.toString());
+            if (status.equals("DEFERRED")) statement.setNull(3, Types.VARCHAR);
+            else statement.setString(3, now.toString());
             statement.setString(4, issueId.toString());
-            if (statement.executeUpdate() != 1) throw new IllegalArgumentException("The quality issue no longer exists.");
+            if (statement.executeUpdate() != 1) throw new IllegalArgumentException("The issue was already reviewed. Refresh the issue list.");
         }
         insertAudit(connection, studyId, auditEventType, "QUALITY_ISSUE", issueId,
                 "{\"note\":\"" + escape(note == null ? "" : note) + "\"}");

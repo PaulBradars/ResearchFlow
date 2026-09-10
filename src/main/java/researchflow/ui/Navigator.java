@@ -40,12 +40,14 @@ public final class Navigator {
     public void showDashboard(Study study) {
         newScope();
         shell.setLeft(studyNavigation(study));
+        markNavigation("Dashboard");
         boundary.show(new StudyDashboardView(study, services.studies(), async, this::showError).node());
     }
 
     public void showForms(Study study) {
         newScope();
         shell.setLeft(studyNavigation(study));
+        markNavigation("Form");
         boundary.show(new FormWorkspaceView(study, services.forms(), async,
                 form -> showRespondent(study, form), services::collectionLink, this::showError).node());
     }
@@ -53,12 +55,14 @@ public final class Navigator {
     public void showResponses(Study study) {
         newScope();
         shell.setLeft(studyNavigation(study));
+        markNavigation("Responses");
         boundary.show(new ResponsesWorkspaceView(study, services.responses(), async, this::showError).node());
     }
 
     public void showDataset(Study study) {
         newScope();
         shell.setLeft(studyNavigation(study));
+        markNavigation("Dataset");
         boundary.show(new DatasetWorkspaceView(study, services.datasets(), services.corrections(),
                 services.audits(), async, this::showError).node());
     }
@@ -66,6 +70,7 @@ public final class Navigator {
     public void showImport(Study study) {
         newScope();
         shell.setLeft(studyNavigation(study));
+        markNavigation("Import");
         boundary.show(new ImportWorkspaceView(study, services.imports(), async,
                 () -> showDataset(study), this::showError).node());
     }
@@ -73,6 +78,7 @@ public final class Navigator {
     public void showQuality(Study study) {
         newScope();
         shell.setLeft(studyNavigation(study));
+        markNavigation("Quality / Versions");
         boundary.show(new QualityWorkspaceView(study, services.quality(), services.qualityReview(),
                 services.versions(), services.datasets(), async, this::showError).node());
     }
@@ -80,6 +86,7 @@ public final class Navigator {
     public void showAnalysis(Study study) {
         newScope();
         shell.setLeft(studyNavigation(study));
+        markNavigation("Analysis");
         boundary.show(new AnalysisWorkspaceView(study, services.analysis(), services.aiFacade(), services.findings(),
                 services.datasets(), services.versions(), async, this::showError).node());
     }
@@ -87,6 +94,7 @@ public final class Navigator {
     public void showFindings(Study study) {
         newScope();
         shell.setLeft(studyNavigation(study));
+        markNavigation("Findings / Report");
         boundary.show(new FindingsReportWorkspaceView(study, services.findings(), services.reports(),
                 async, this::showError).node());
     }
@@ -137,16 +145,26 @@ public final class Navigator {
         var quality = navButton("Quality / Versions", () -> showQuality(study));
         var analysis = navButton("Analysis", () -> showAnalysis(study));
         var findings = navButton("Findings / Report", () -> showFindings(study));
-        var nav = new VBox(8, back, dashboard, disabled, form, responses, importData, dataset, quality, analysis, findings);
+        var spacer = new javafx.scene.layout.Region(); VBox.setVgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+        var footer = new Label("LOCAL WORKSPACE\nYour data stays on this PC"); footer.getStyleClass().add("nav-footer");
+        var nav = new VBox(6, back, dashboard, disabled, form, responses, importData, dataset, quality, analysis, findings, spacer, footer);
         nav.setPadding(new Insets(20, 14, 20, 14));
         nav.getStyleClass().add("side-nav");
-        nav.setPrefWidth(210);
+        nav.setPrefWidth(228);
         return nav;
     }
 
-    private static Button navButton(String text, Runnable action) {
+    private void markNavigation(String title) {
+        if (shell.getLeft() instanceof VBox navigation) for (var child : navigation.getChildren()) {
+            child.getStyleClass().remove("nav-active");
+            if (child instanceof Button button && button.getText().equals(title)) child.getStyleClass().add("nav-active");
+        }
+    }
+
+    private Button navButton(String text, Runnable action) {
         var button = new Button(text);
         button.getStyleClass().add("nav-button");
+        button.setGraphic(Visuals.icon(text));
         button.setMaxWidth(Double.MAX_VALUE);
         button.setOnAction(event -> action.run());
         return button;

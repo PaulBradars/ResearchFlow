@@ -39,6 +39,54 @@ class AnalysisFacadeTest {
     @TempDir Path temporaryDirectory;
 
     @Test
+    void greetingWorksOfflineAndNeverCreatesStatisticalEvidence() {
+        var fixture = fixture(FakeLlmClient.unavailable());
+        var answer = fixture.facade().ask(fixture.studyId(), " How are you? ");
+        org.junit.jupiter.api.Assertions.assertNull(answer.evidence());
+        assertTrue(answer.explanation().contains("ready to help"));
+        assertEquals(2, fixture.facade().history(fixture.studyId()).size());
+        assertTrue(fixture.facade().history(fixture.studyId()).stream().allMatch(m -> m.analysisId() == null));
+    }
+
+    @Test
+    void generalQuestionsAndClarificationsNeedOnlyOneModelReply() {
+        var fixture = fixture(FakeLlmClient.available());
+        fixture.llm().thenRespond("{\"reply\":\"Correlation describes how two variables move together.\"}");
+        var answer = fixture.facade().ask(fixture.studyId(), "What is correlation?");
+        org.junit.jupiter.api.Assertions.assertNull(answer.evidence());
+        assertTrue(answer.explanation().contains("two variables"));
+        fixture.llm().thenRespond("{\"reply\":\"Which variable would you like to summarize?\"}");
+        assertTrue(fixture.facade().ask(fixture.studyId(), "Summarize it").explanation().contains("Which variable"));
+        fixture.llm().thenRespond("{\"reply\":\"\"}");
+        assertThrows(LlmException.class, () -> fixture.facade().ask(fixture.studyId(), "help"));
+        assertEquals(4, fixture.facade().history(fixture.studyId()).size());
+    }
+
+    @Test
+    void exportIncludesAllMessagesAndClearPreservesAnalyses() {
+        var fixture = fixture(FakeLlmClient.available());
+        fixture.llm().thenRespond(planJson("NUMERIC_SUMMARY", fixture.focus().id(), null)).thenRespond("Focus summary.");
+        var evidence = fixture.facade().ask(fixture.studyId(), "Average focus?").evidence();
+        var connections = TestDatabase.migrated(temporaryDirectory);
+        var otherStudy = new StudyService(new JdbcStudyRepository(connections, new TransactionManager(connections)))
+                .create("Other", "", "", "", null, null, List.of());
+        fixture.facade().ask(otherStudy.id(), "hello");
+        for (int i = 0; i < 130; i++) fixture.facade().ask(fixture.studyId(), "hello");
+        assertEquals(250, fixture.facade().history(fixture.studyId()).size());
+        assertEquals("hello", fixture.facade().history(fixture.studyId()).getFirst().content());
+        var exported = fixture.facade().exportHistory(fixture.studyId());
+        assertTrue(exported.contains("Average focus?"));
+        assertTrue(exported.contains(evidence.id().toString()));
+        assertEquals(262, exported.lines().filter(line -> line.contains(" | ")).count());
+        fixture.facade().clearHistory(fixture.studyId());
+        assertTrue(fixture.facade().history(fixture.studyId()).isEmpty());
+        assertEquals(2, fixture.facade().history(otherStudy.id()).size());
+        assertFalse(fixture.facade().exportHistory(fixture.studyId()).contains("Average focus?"));
+        assertTrue(new JdbcAnalysisRepository(connections, new TransactionManager(connections))
+                .findById(evidence.id()).isPresent());
+    }
+
+    @Test
     void fiveRepresentativeQuestionsMapToValidPlansAcrossEveryMethod() {
         var fixture = fixture(FakeLlmClient.available());
         var llm = fixture.llm();
@@ -47,6 +95,10 @@ class AnalysisFacadeTest {
                 .thenRespond("Sleep and focus move together.");
         var correlation = fixture.facade().ask(fixture.studyId(), "How is sleep duration associated with academic focus?");
         assertEquals(AnalysisMethod.CORRELATION, correlation.evidence().method());
+        assertTrue(correlation.explanation().contains("Pearson r: 1.0000"));
+        assertTrue(correlation.explanation().contains("Sleep hours: n=4; mean=6.5000"));
+        assertTrue(correlation.explanation().contains("Focus: n=4; mean=3.5000"));
+        assertTrue(fixture.facade().exportHistory(fixture.studyId()).contains("Descriptive statistics on the same paired rows"));
 
         llm.thenRespond(planJson("NUMERIC_SUMMARY", fixture.focus().id(), null))
                 .thenRespond("Average focus is moderate.");
@@ -116,6 +168,8 @@ class AnalysisFacadeTest {
         assertNotNull(answer.evidence());
         assertEquals(AnalysisMethod.NUMERIC_SUMMARY, answer.evidence().method());
         assertTrue(answer.explanation().contains("could not be generated"));
+        assertTrue(answer.explanation().contains("Statistical breakdown"));
+        assertTrue(answer.explanation().contains("Mean: 3.5000"));
         assertEquals(2, fixture.facade().history(fixture.studyId()).size());
     }
 
