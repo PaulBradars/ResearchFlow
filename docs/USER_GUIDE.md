@@ -151,6 +151,8 @@ Changing workspaces cancels the previous workspace's pending tasks and suppresse
 
 The **Dashboard** displays study information and summary cards for forms, responses, open quality issues, dataset versions, analyses, and approved findings. These are overview counts, not the sample size of any particular historical analysis.
 
+The **Statistical diagrams** section below the summary cards lets you browse saved AI and manual analyses. It opens the latest result by default; use the selector to choose another analysis. Frequencies and group comparisons use bar charts, numeric summaries use histograms, correlations use scatter plots, and cross-tabulations use category-pair count bars. Expand the statistical results or provenance panels to inspect the numbers, warnings, and dataset version behind the chart. Each diagram uses the original saved snapshot, even if live responses have changed. Use **Refresh diagrams** after new analyses, or **Open analysis workspace** to create your first result.
+
 ### Archiving
 
 Archive only when you intend the study to become read-only. You can still open records, inspect saved evidence, and compose a report preview. New submissions, imports, corrections, quality scans/reviews, snapshots/restores, analyses/AI turns, finding changes, and report export are rejected. Export is a write operation because it records an audit event.

@@ -41,7 +41,8 @@ public final class Navigator {
         newScope();
         shell.setLeft(studyNavigation(study));
         markNavigation("Dashboard");
-        boundary.show(new StudyDashboardView(study, services.studies(), async, this::showError).node());
+        boundary.show(new StudyDashboardView(study, services.studies(), services.analysis(), async,
+                this::showError, () -> showAnalysis(study)).node());
     }
 
     public void showForms(Study study) {

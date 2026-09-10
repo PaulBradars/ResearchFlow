@@ -16,6 +16,11 @@ public final class StudyDashboardView {
     private final FlowPane metrics = new FlowPane(12, 12);
 
     public StudyDashboardView(Study study, StudyService studies, Async async, Consumer<Throwable> errors) {
+        this(study, studies, null, async, errors, () -> { });
+    }
+
+    public StudyDashboardView(Study study, StudyService studies, researchflow.service.AnalysisService analysis,
+                              Async async, Consumer<Throwable> errors, Runnable openAnalysis) {
         root.setPadding(new Insets(28));
         var eyebrow = new Label("STUDY DASHBOARD");
         eyebrow.getStyleClass().add("eyebrow");
@@ -42,6 +47,8 @@ public final class StudyDashboardView {
         }
         root.getChildren().addAll(Visuals.hero("STUDY OVERVIEW", study.title(), description.getText()), metrics,
                 Visuals.panel("Research objectives", objectives), Visuals.panel("Questions to explore", questions));
+        if (analysis != null) root.getChildren().add(2,
+                new DashboardDiagramsView(study, analysis, async, openAnalysis).node());
         async.run(() -> studies.metrics(study.id()), this::showMetrics, errors);
     }
 
