@@ -72,6 +72,36 @@ The window opens directly into the Studies list. From there, a Study's left-hand
 you every workspace: Form, Responses, Import, Dataset, Quality / Versions, Analysis, Findings /
 Report.
 
+## Collect responses through a browser link
+
+1. Open a study, design a form, and **Activate** it.
+2. Click **Share response link**, then **Copy link**. This starts the collection server on your PC.
+3. Send the link to respondents. They can fill in the form on a phone or computer browser;
+   validated responses are saved directly in your local SQLite database.
+4. Open or refresh **Responses** to see new submissions. Use **Close form** to stop accepting data.
+
+Keep ResearchFlow and your PC running during collection. By default the link uses a detected
+local IPv4 address and port **8080**; respondents must be on a network that can reach that PC,
+and the firewall must allow inbound TCP on the collection port. On PCs with multiple network
+adapters, set the URL explicitly to the reachable address.
+
+For respondents outside your network, provide an HTTPS reverse proxy or tunnel forwarding to
+`http://localhost:8080`, and set its public origin before launching ResearchFlow:
+
+```powershell
+$env:RESEARCHFLOW_COLLECTION_PUBLIC_URL = "https://your-public-host.example"
+$env:RESEARCHFLOW_COLLECTION_PORT = "8080"
+.\mvnw.cmd javafx:run
+```
+
+The public URL setting changes generated links; it does not create a tunnel or configure your
+router. System property equivalents are `researchflow.collection.publicUrl` and
+`researchflow.collection.port`. Share the generated `/forms/<id>` link. Anyone with the link can
+submit while the form is active; researcher workspaces and saved responses are not served by this
+HTTP endpoint. Browser sessions expire after 24 hours. Retrying a successful submission from the
+same page does not create another response. After restarting the app, click **Share response link**
+again to start the server; existing links work if the host and port stay the same.
+
 ## 5. (Optional) enable Ask Your Data — local AI
 
 The app works completely without this step; only the **Ask Your Data** tab needs it.

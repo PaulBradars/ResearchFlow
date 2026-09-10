@@ -94,6 +94,21 @@ class JdbcQualityRepositoryTest {
         assertEquals(1, fixture.quality().list(fixture.studyId(), QualityIssueStatus.ACCEPTED).size());
     }
 
+    @Test
+    void rescanResolvesOtherOpenIssuesAfterExclusionAndProtectsReviewedStatus() throws Exception {
+        var fixture = fixture();
+        insertDirtyResponse(fixture);
+        var issues = fixture.quality().scan(fixture.studyId());
+        var missing = issues.stream().filter(issue -> issue.type() == QualityIssueType.MISSING_REQUIRED).findFirst().orElseThrow();
+        fixture.review().apply(new ReviewCommand.Exclude(missing.id(), fixture.studyId(),
+                fixture.dirtyResponseId(), "Incomplete response"));
+        var rescanned = fixture.quality().scan(fixture.studyId());
+        assertTrue(rescanned.stream().filter(issue -> fixture.dirtyResponseId().equals(issue.responseId()))
+                .allMatch(issue -> issue.status() == QualityIssueStatus.RESOLVED));
+        assertThrows(researchflow.service.ValidationException.class,
+                () -> fixture.review().apply(new ReviewCommand.Defer(missing.id(), "Try to defer again")));
+    }
+
     private void insertDirtyResponse(Fixture fixture) throws Exception {
         try (var connection = fixture.connections().open()) {
             try (var statement = connection.prepareStatement("""

@@ -19,6 +19,7 @@ import java.util.logging.Logger;
 public final class ResearchFlowApplication extends Application {
     private static final Logger LOG = Logger.getLogger(ResearchFlowApplication.class.getName());
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+    private AppServices runningServices;
 
     public static void main(String[] args) {
         launch(args);
@@ -53,6 +54,7 @@ public final class ResearchFlowApplication extends Application {
     }
 
     private void showApplication(Stage stage, AppServices services) {
+        runningServices = services;
         var navigator = new Navigator(services, executor);
         var scene = new Scene(navigator.root(), 1180, 760);
         scene.getStylesheets().add(ResearchFlowApplication.class.getResource("/css/theme.css").toExternalForm());
@@ -81,6 +83,7 @@ public final class ResearchFlowApplication extends Application {
 
     @Override
     public void stop() {
+        if (runningServices != null) runningServices.stopCollection();
         executor.shutdownNow();
     }
 }

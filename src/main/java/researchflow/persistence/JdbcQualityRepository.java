@@ -30,6 +30,21 @@ public final class JdbcQualityRepository implements QualityRepository {
     public void reconcile(UUID studyId, List<QualityIssue> detected) {
         transactions.inTransaction(connection -> {
             JdbcStudyRepository.requireWritable(connection, studyId);
+            var detectedKeys = detected.stream().map(QualityIssue::fingerprint)
+                    .collect(java.util.stream.Collectors.toSet());
+            var stale = new ArrayList<UUID>();
+            try (var lookup = connection.prepareStatement(
+                    "SELECT * FROM quality_issues WHERE study_id=? AND status IN ('OPEN','DEFERRED')")) {
+                lookup.setString(1, studyId.toString());
+                try (var rows = lookup.executeQuery()) {
+                    while (rows.next()) {
+                        var issue = mapIssue(rows);
+                        if (!detectedKeys.contains(issue.fingerprint())) stale.add(issue.id());
+                    }
+                }
+            }
+            for (var id : stale) updateStatus(connection, id, "RESOLVED",
+                    "No longer detected in the current dataset.", "QUALITY_ISSUE_RESOLVED");
             var active = new HashSet<String>();
             try (var statement = connection.prepareStatement(
                     "SELECT issue_type, response_id, question_id FROM quality_issues WHERE study_id=? AND status<>'RESOLVED'")) {

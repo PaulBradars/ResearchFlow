@@ -37,8 +37,18 @@ public final class ResponsesWorkspaceView {
         table.getColumns().addAll(form, submitted, count, duration);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         table.setPlaceholder(new Label("No responses have been submitted yet."));
-        root.getChildren().addAll(eyebrow, title, table);
-        async.run(() -> responses.list(study.id()), values -> table.getItems().setAll(values), errors);
+        var refresh = new javafx.scene.control.Button("Refresh responses");
+        Runnable reload = () -> {
+            refresh.setDisable(true);
+            async.run(() -> responses.list(study.id()), values -> {
+                table.getItems().setAll(values);
+                refresh.setDisable(false);
+            }, failure -> { refresh.setDisable(false); errors.accept(failure); });
+        };
+        refresh.setOnAction(event -> reload.run());
+        root.getChildren().addAll(eyebrow, new javafx.scene.layout.HBox(12, title, refresh), table);
+        VBox.setVgrow(table, javafx.scene.layout.Priority.ALWAYS);
+        reload.run();
     }
 
     public Parent node() { return root; }

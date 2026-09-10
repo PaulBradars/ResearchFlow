@@ -37,10 +37,13 @@ public final class FormWorkspaceView {
     private final Study study;
     private final Consumer<Form> collect;
     private final Consumer<Throwable> errors;
+    private final java.util.function.Function<java.util.UUID, String> collectionLink;
     private Form selected;
 
     public FormWorkspaceView(Study study, FormService service, Async async,
-                             Consumer<Form> collect, Consumer<Throwable> errors) {
+                             Consumer<Form> collect, java.util.function.Function<java.util.UUID, String> collectionLink,
+                             Consumer<Throwable> errors) {
+        this.collectionLink = collectionLink;
         this.study = study; this.service = service; this.async = async; this.collect = collect; this.errors = errors;
         root.setPadding(new Insets(28));
         var eyebrow = new Label("FORM DESIGN / RESEARCHER MODE"); eyebrow.getStyleClass().add("eyebrow");
@@ -119,7 +122,28 @@ public final class FormWorkspaceView {
         activate.setOnAction(event -> async.run(() -> service.activate(form.id()), updated -> reload(updated.id()), errors));
         close.setOnAction(event -> async.run(() -> service.close(form.id()), updated -> reload(updated.id()), errors));
         enter.setOnAction(event -> collect.accept(form));
-        var controls = new HBox(8, add, edit, delete, up, down, preview, activate, enter, close);
+        var share = new Button("Share response link");
+        share.setDisable(form.status() != FormStatus.ACTIVE);
+        share.setOnAction(event -> {
+            share.setDisable(true);
+            async.run(() -> collectionLink.apply(form.id()), link -> {
+                share.setDisable(false);
+                var field = new TextField(link); field.setEditable(false); field.setPrefColumnCount(48);
+                var copy = new Button("Copy link");
+                copy.setOnAction(copyEvent -> {
+                    var clipboard = new javafx.scene.input.ClipboardContent(); clipboard.putString(link);
+                    javafx.scene.input.Clipboard.getSystemClipboard().setContent(clipboard);
+                    copy.setText("Copied");
+                });
+                var help = new Label("Keep ResearchFlow running on this PC. Respondents can open this link in a browser on your local network. For internet access, configure a public URL or tunnel to this PC. Allow the collection port through your firewall.");
+                help.setWrapText(true); help.setMaxWidth(580);
+                var dialog = new Dialog<Void>(); dialog.setTitle("Collect responses online");
+                dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+                dialog.getDialogPane().setContent(new VBox(12, new Label("Response collection is running"), field, copy, help));
+                dialog.showAndWait();
+            }, failure -> { share.setDisable(false); errors.accept(failure); });
+        });
+        var controls = new javafx.scene.layout.FlowPane(8, 8, add, edit, delete, up, down, preview, activate, enter, share, close);
         editor.setPadding(new Insets(0, 0, 0, 18));
         editor.getChildren().setAll(title, status, new Label(form.description().isBlank() ? "No description." : form.description()), controls, table);
         VBox.setVgrow(table, javafx.scene.layout.Priority.ALWAYS);

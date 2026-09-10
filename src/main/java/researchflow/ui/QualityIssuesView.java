@@ -40,6 +40,7 @@ public final class QualityIssuesView {
     private final TableView<QualityIssue> table = new TableView<>();
     private final ComboBox<QualityIssueStatus> statusFilter = new ComboBox<>();
     private final Label status = new Label();
+    private boolean updatingFilter;
     private final Study study;
     private final QualityService quality;
     private final QualityReviewService review;
@@ -64,7 +65,7 @@ public final class QualityIssuesView {
 
         statusFilter.getItems().addAll(QualityIssueStatus.values());
         statusFilter.setValue(QualityIssueStatus.OPEN);
-        statusFilter.setOnAction(event -> refresh());
+        statusFilter.setOnAction(event -> { if (!updatingFilter) refresh(); });
         var scan = new Button("Scan for quality issues");
         scan.getStyleClass().add("primary-button");
         scan.setOnAction(event -> scan());
@@ -88,7 +89,12 @@ public final class QualityIssuesView {
         var deferAll = new Button("Defer selected");
         var excludeAll = new Button("Exclude selected");
         for (var button : List.of(acceptAll, deferAll, excludeAll)) {
-            button.disableProperty().bind(Bindings.isEmpty(table.getSelectionModel().getSelectedItems()));
+            button.disableProperty().bind(Bindings.createBooleanBinding(
+                    () -> table.getSelectionModel().getSelectedItems().isEmpty()
+                            || table.getSelectionModel().getSelectedItems().stream().anyMatch(issue ->
+                            (issue.status() != QualityIssueStatus.OPEN && issue.status() != QualityIssueStatus.DEFERRED)
+                                    || (button == excludeAll && issue.responseId() == null)),
+                    table.getSelectionModel().getSelectedItems()));
         }
         acceptAll.setOnAction(event -> bulk("Accept", "Retain the selected data as-is.",
                 "Why should these issues be accepted?", ReviewCommand.Accept::new));
@@ -124,22 +130,25 @@ public final class QualityIssuesView {
     }
 
     private void refresh() {
-        table.setDisable(true);
-        async.run(() -> quality.list(study.id(), statusFilter.getValue()), issues -> {
-            table.setDisable(false);
+        root.setDisable(true);
+        var filter = statusFilter.getValue();
+        async.run(() -> quality.list(study.id(), filter), issues -> {
+            root.setDisable(false);
             table.getItems().setAll(issues);
             status.setText(issues.size() + " issue(s)");
-        }, errors);
+        }, failure -> { root.setDisable(false); handle(failure); });
     }
 
     private void scan() {
-        table.setDisable(true);
+        root.setDisable(true);
         async.run(() -> quality.scan(study.id()), issues -> {
-            table.setDisable(false);
+            root.setDisable(false);
+            updatingFilter = true;
             statusFilter.setValue(QualityIssueStatus.OPEN);
-            table.getItems().setAll(quality.list(study.id(), QualityIssueStatus.OPEN));
+            updatingFilter = false;
+            table.getItems().setAll(issues.stream().filter(issue -> issue.status() == QualityIssueStatus.OPEN).toList());
             status.setText("Scan complete: " + table.getItems().size() + " open issue(s)");
-        }, failure -> { table.setDisable(false); errors.accept(failure); });
+        }, failure -> { root.setDisable(false); errors.accept(failure); });
     }
 
     private void review(QualityIssue issue) {
@@ -198,7 +207,8 @@ public final class QualityIssuesView {
             var row = datasets.detail(study.id(), issue.responseId());
             var variable = page.variables().stream().filter(value -> value.questionId().equals(issue.questionId()))
                     .findFirst().orElseThrow(() -> new IllegalStateException("The variable no longer exists."));
-            return new Object[]{variable, row.cell(issue.questionId()).displayValue()};
+            var cell = row.cell(issue.questionId());
+            return new Object[]{variable, cell.missing() ? "" : cell.displayValue()};
         }, result -> {
             var variable = (researchflow.domain.DatasetVariable) result[0];
             var currentValue = (String) result[1];
@@ -233,14 +243,14 @@ public final class QualityIssuesView {
             confirm.setHeaderText("Confirm bulk action");
             if (confirm.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
             var commands = selected.stream().map(issue -> factory.apply(issue.id(), reason)).toList();
-            table.setDisable(true);
-            async.run(() -> review.applyAll(commands), ignored -> refresh(), failure -> { table.setDisable(false); handle(failure); });
+            root.setDisable(true);
+            async.run(() -> review.applyAll(commands), ignored -> refresh(), failure -> { refresh(); handle(failure); });
         });
     }
 
     private void apply(ReviewCommand command) {
-        table.setDisable(true);
-        async.run(() -> review.apply(command), ignored -> refresh(), failure -> { table.setDisable(false); handle(failure); });
+        root.setDisable(true);
+        async.run(() -> review.apply(command), ignored -> refresh(), failure -> { root.setDisable(false); handle(failure); });
     }
 
     private void handle(Throwable failure) {

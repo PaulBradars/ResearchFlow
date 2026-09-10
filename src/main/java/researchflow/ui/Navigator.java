@@ -47,7 +47,7 @@ public final class Navigator {
         newScope();
         shell.setLeft(studyNavigation(study));
         boundary.show(new FormWorkspaceView(study, services.forms(), async,
-                form -> showRespondent(study, form), this::showError).node());
+                form -> showRespondent(study, form), services::collectionLink, this::showError).node());
     }
 
     public void showResponses(Study study) {

@@ -28,6 +28,9 @@ public final class QualityReviewService {
         var issue = quality.findById(command.issueId())
                 .orElseThrow(() -> new IllegalArgumentException("The quality issue no longer exists."));
         writeGuard.requireWritable(issue.studyId());
+        if (issue.status() != researchflow.domain.QualityIssueStatus.OPEN
+                && issue.status() != researchflow.domain.QualityIssueStatus.DEFERRED)
+            throw new ValidationException(Map.of("status", "This issue has already been reviewed. Refresh the issue list."));
         switch (command) {
             case ReviewCommand.Correct correct -> {
                 requireTarget(issue, correct.studyId(), correct.responseId(), correct.questionId(), true);

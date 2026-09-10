@@ -35,6 +35,27 @@ import researchflow.service.ReportService;
 import java.time.Duration;
 
 public final class AppServices {
+    private researchflow.collection.CollectionServer collection;
+
+    public synchronized String collectionLink(java.util.UUID formId) {
+        if (collection == null) {
+            var port = System.getProperty("researchflow.collection.port",
+                    System.getenv().getOrDefault("RESEARCHFLOW_COLLECTION_PORT", "8080"));
+            var url = System.getProperty("researchflow.collection.publicUrl",
+                    System.getenv().getOrDefault("RESEARCHFLOW_COLLECTION_PUBLIC_URL", ""));
+            try {
+                collection = new researchflow.collection.CollectionServer(forms, submissions, connections,
+                        new java.net.InetSocketAddress("0.0.0.0", Integer.parseInt(port)), url);
+            } catch (java.io.IOException failure) {
+                throw new IllegalStateException("Could not start collection on port " + port + ". Check whether the port is already in use.", failure);
+            }
+        }
+        return collection.link(formId);
+    }
+
+    public synchronized void stopCollection() {
+        if (collection != null) { collection.close(); collection = null; }
+    }
     private final AppConfig config;
     private final ConnectionFactory connections;
     private final StudyService studies;
